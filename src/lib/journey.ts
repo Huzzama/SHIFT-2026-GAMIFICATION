@@ -1,0 +1,149 @@
+/**
+ * Turns a Canvas snapshot into the visual route the student walks.
+ *
+ * A milestone is one Canvas assignment. The last item of each module is a
+ * checkpoint - the "you made it this far" marker. Missed work is marked
+ * `missed`, never styled as failure, and the recovery route reorders what
+ * comes next instead of demanding everything at once.
+ */
+import type { CourseSnapshot } from '@/data/client'
+import type {
+  FrictionSignal,
+  Journey,
+  JourneyMilestone,
+  NextBestAction,
+  RecoveryStep,
+} from '@/types'
+
+export function buildJourney(
+  snapshot: CourseSnapshot,
+  friction: FrictionSignal,
+): Journey {
+  const now = Date.now()
+  const ordered = [...snapshot.assignments].sort((a, b) => {
+    const am = snapshot.modules.find((m) => m.id === a.module_id)?.position ?? 0
+    const bm = snapshot.modules.find((m) => m.id === b.module_id)?.position ?? 0
+    if (am !== bm) return am - bm
+    return a.id - b.id
+  })
+
+  const lastOfModule = new Map<number, number>()
+  ordered.forEach((a) => lastOfModule.set(a.module_id, a.id))
+
+  let currentAssigned = false
+  const milestones: JourneyMilestone[] = ordered.map((a) => {
+    const mod = snapshot.modules.find((m) => m.id === a.module_id)
+    const done = Boolean(a.submission)
+    const overdue = !done && a.due_at !== null && new Date(a.due_at).getTime() < now
+    const locked = !done && mod?.state === 'locked'
+
+    let status: JourneyMilestone['status']
+    if (done) status = 'completed'
+    else if (overdue) status = 'missed'
+    else if (locked) status = 'locked'
+    else if (!currentAssigned) {
+      status = 'current'
+      currentAssigned = true
+    } else status = 'upcoming'
+
+    return {
+      id: `a-${a.id}`,
+      title: a.name,
+      subtitle: mod?.name,
+      status,
+      checkpoint: lastOfModule.get(a.module_id) === a.id,
+      estimatedMinutes: a.estimated_minutes,
+      dueAt: a.due_at,
+      moduleId: a.module_id,
+      assignmentId: a.id,
+    }
+  })
+
+  // With missed work present, the student stands at the first thing still open.
+  const firstOpen = milestones.findIndex(
+    (m) => m.status === 'missed' || m.status === 'current',
+  )
+  const completed = milestones.filter((m) => m.status === 'completed').length
+
+  return {
+    courseId: snapshot.course.id,
+    courseName: snapshot.course.name,
+    milestones,
+    progressPercent: Math.round((completed / milestones.length) * 100),
+    currentIndex: firstOpen === -1 ? milestones.length - 1 : firstOpen,
+    recalculated: friction.state !== 'FLOWING',
+  }
+}
+
+/**
+ * One step, not a list. The point is to remove the decision, so the rule is
+ * deliberately boring: the shortest open thing the student can actually finish
+ * in the time they said they have.
+ */
+export function nextBestAction(
+  journey: Journey,
+  availableMinutes: number,
+): NextBestAction | null {
+  const open = journey.milestones.filter(
+    (m) => m.status === 'missed' || m.status === 'current' || m.status === 'upcoming',
+  )
+  if (open.length === 0) return null
+
+  const fits = open.filter((m) => m.estimatedMinutes <= availableMinutes)
+  const pick =
+    fits.sort((a, b) => a.estimatedMinutes - b.estimatedMinutes)[0] ??
+    open.sort((a, b) => a.estimatedMinutes - b.estimatedMinutes)[0]
+
+  const reason =
+    pick.status === 'missed'
+      ? 'This one reopens the route. Everything after it gets easier.'
+      : pick.estimatedMinutes <= availableMinutes
+        ? 'It fits the time you have today and keeps your journey moving.'
+        : 'It is the shortest step available - start it and pause whenever you need.'
+
+  return {
+    milestoneId: pick.id,
+    title: pick.title,
+    reason,
+    estimatedMinutes: pick.estimatedMinutes,
+  }
+}
+
+/**
+ * A recovery route: three small sessions, never "catch up on everything".
+ * Today's step is always the smallest one - breaking inertia is the goal.
+ */
+export function recoveryRoute(journey: Journey): RecoveryStep[] {
+  const open = journey.milestones
+    .filter((m) => m.status === 'missed' || m.status === 'current' || m.status === 'upcoming')
+    .slice(0, 6)
+  if (open.length === 0) return []
+
+  const bySize = [...open].sort((a, b) => a.estimatedMinutes - b.estimatedMinutes)
+  const today = bySize[0]
+  const rest = open.filter((m) => m.id !== today.id)
+
+  const steps: RecoveryStep[] = [
+    {
+      when: 'today',
+      title: `Reconnect: ${today.title}`,
+      estimatedMinutes: Math.min(10, today.estimatedMinutes),
+      kind: 'comeback_mission',
+    },
+  ]
+  if (rest[0])
+    steps.push({
+      when: 'tomorrow',
+      title: rest[0].title,
+      estimatedMinutes: rest[0].estimatedMinutes,
+      kind: 'review',
+    })
+  if (rest[1])
+    steps.push({
+      when: 'next_session',
+      title: rest[1].title,
+      estimatedMinutes: rest[1].estimatedMinutes,
+      kind: 'continue',
+    })
+  return steps
+}

@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "FARO",
+  "version": "0.1.0",
+  "description": "Hard to quit. Easy to return. A learning persistence companion for Canvas.",
+  "permissions": ["storage", "sidePanel"],
+  "host_permissions": ["https://*.instructure.com/*"],
+  "action": { "default_title": "Open FARO" },
+  "side_panel": { "default_path": "index.html" },
+  "background": { "service_worker": "background.js", "type": "module" }
+}

@@ -1,0 +1,132 @@
+@import './tokens.css';
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: var(--text-md);
+  color: var(--ink-800);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font-family: inherit; cursor: pointer; }
+
+/* App shell ------------------------------------------------------------- */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--paper);
+}
+
+.app__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--mist-200);
+}
+
+.brand { display: flex; align-items: center; gap: var(--space-2); }
+.brand__name { font-size: var(--text-md); font-weight: 650; letter-spacing: 0.02em; }
+.brand__tag { font-size: var(--text-xs); color: var(--sea-400); }
+
+.app__body { flex: 1; overflow-y: auto; padding: var(--space-4); }
+
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  border-top: 1px solid var(--mist-200);
+  background: var(--paper);
+}
+.tab {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--sea-400);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: background var(--transition), color var(--transition);
+}
+.tab:hover { background: var(--mist-100); }
+.tab--active { background: var(--ink-900); color: var(--paper); }
+.tab--active:hover { background: var(--ink-800); }
+
+/* Primitives ------------------------------------------------------------ */
+.card {
+  background: #fff;
+  border: 1px solid var(--mist-200);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-soft);
+}
+.card + .card { margin-top: var(--space-3); }
+
+.eyebrow {
+  font-size: var(--text-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sea-400);
+  font-weight: 600;
+}
+
+.h1 { font-size: var(--text-xl); margin: var(--space-2) 0; font-weight: 650; }
+.h2 { font-size: var(--text-lg); margin: 0 0 var(--space-2); font-weight: 620; }
+.muted { color: var(--sea-400); font-size: var(--text-sm); }
+
+.btn {
+  border: 0;
+  border-radius: var(--radius-md);
+  padding: 10px var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  background: var(--ink-900);
+  color: var(--paper);
+  transition: background var(--transition), transform var(--transition);
+}
+.btn:hover { background: var(--ink-700); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn--beacon { background: var(--beacon-500); color: var(--ink-900); }
+.btn--beacon:hover { background: var(--beacon-400); }
+.btn--ghost {
+  background: transparent;
+  color: var(--ink-700);
+  border: 1px solid var(--mist-200);
+}
+.btn--ghost:hover { background: var(--mist-100); }
+.btn--block { width: 100%; }
+
+.chip {
+  border: 1px solid var(--mist-200);
+  background: #fff;
+  border-radius: 999px;
+  padding: 6px var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--ink-700);
+  transition: all var(--transition);
+}
+.chip:hover { border-color: var(--sea-300); background: var(--mist-100); }
+.chip--on { background: var(--ink-900); color: var(--paper); border-color: var(--ink-900); }
+.chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.meter { height: 6px; background: var(--mist-200); border-radius: 999px; overflow: hidden; }
+.meter__fill { height: 100%; background: var(--beacon-500); border-radius: 999px; transition: width 400ms ease; }
+.meter__fill--moss { background: var(--moss-500); }
+
+.stack { display: flex; flex-direction: column; gap: var(--space-3); }
+.row { display: flex; align-items: center; gap: var(--space-3); }
+.row--between { justify-content: space-between; }

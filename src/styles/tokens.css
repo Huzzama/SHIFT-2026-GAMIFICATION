@@ -1,0 +1,41 @@
+/* FARO design tokens.
+   Harbor at dusk, not AI SaaS: deep ink, sea blues, one warm beacon light. */
+:root {
+  --ink-900: #0d1b2a;
+  --ink-800: #13253a;
+  --ink-700: #1c3147;
+  --ink-600: #294056;
+  --sea-400: #4f7d99;
+  --sea-300: #7ba5bd;
+  --mist-200: #c9d8e2;
+  --mist-100: #e8eff3;
+  --paper: #f7fafb;
+
+  --beacon-500: #e8a33d;
+  --beacon-400: #f2b95c;
+  --beacon-100: #fbeed7;
+
+  --moss-500: #4f8a6b;
+  --moss-100: #dfeee6;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-md: 15px;
+  --text-lg: 19px;
+  --text-xl: 24px;
+
+  --shadow-soft: 0 1px 2px rgba(13, 27, 42, 0.06), 0 8px 24px rgba(13, 27, 42, 0.08);
+  --transition: 140ms ease;
+}
