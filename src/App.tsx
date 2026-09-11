@@ -1,16 +1,34 @@
 import { useState } from 'react'
 import { Lighthouse } from '@/components/Lighthouse'
 import { MomentumBadge } from '@/components/MomentumBadge'
+import { DashboardView } from '@/views/DashboardView'
 import { JourneyView } from '@/views/JourneyView'
 import { MentorView } from '@/views/MentorView'
+import { ProgressView } from '@/views/ProgressView'
 import { PurposeView } from '@/views/PurposeView'
+import { RecoveryView } from '@/views/RecoveryView'
 import { useStore } from '@/state/store'
+import type { LifeState } from '@/types'
 
-type Tab = 'journey' | 'mentor' | 'purpose'
+/**
+ * Four places, and that is the whole product.
+ *
+ * Recovery and Purpose are deliberately not tabs. Recovery appears when the
+ * journey needs it, reached from Home; Purpose is set once and revisited
+ * rarely. Keeping them out of the bar is what stops FARO from becoming another
+ * app with sections to manage.
+ */
+type Tab = 'home' | 'journey' | 'mentor' | 'progress'
+type View = Tab | 'recovery' | 'purpose'
 
 export default function App() {
-  const { loading, purpose, friction } = useStore()
-  const [tab, setTab] = useState<Tab>('journey')
+  const { loading, purpose, friction, setLifeState } = useStore()
+  const [view, setView] = useState<View>('home')
+
+  const openRecovery = (state?: LifeState) => {
+    if (state) setLifeState(state)
+    setView('recovery')
+  }
 
   if (loading) {
     return (
@@ -42,35 +60,64 @@ export default function App() {
     )
   }
 
+  const tab: Tab | null =
+    view === 'recovery' || view === 'purpose' ? null : view
+
   return (
     <div className="app">
       <header className="app__header">
-        <div className="brand">
+        <button className="brand brand--button" onClick={() => setView('home')}>
           <Lighthouse />
-          <div>
+          <div style={{ textAlign: 'left' }}>
             <div className="brand__name">FARO</div>
             <div className="brand__tag">No Game Over. Recalculate your route.</div>
           </div>
-        </div>
+        </button>
         {friction && <MomentumBadge friction={friction} />}
       </header>
 
+      {(view === 'recovery' || view === 'purpose') && (
+        <button className="backbar" onClick={() => setView('home')}>
+          ← {view === 'recovery' ? 'Recovery' : 'Your purpose'}
+        </button>
+      )}
+
       <div className="app__body">
-        {tab === 'journey' && <JourneyView onAskMentor={() => setTab('mentor')} />}
-        {tab === 'mentor' && <MentorView />}
-        {tab === 'purpose' && <PurposeView />}
+        {view === 'home' && (
+          <DashboardView
+            onAskMentor={() => setView('mentor')}
+            onOpenRecovery={openRecovery}
+            onOpenJourney={() => setView('journey')}
+          />
+        )}
+        {view === 'journey' && <JourneyView onAskMentor={() => setView('mentor')} />}
+        {view === 'mentor' && <MentorView />}
+        {view === 'progress' && (
+          <ProgressView
+            onOpenJourney={() => setView('journey')}
+            onEditPurpose={() => setView('purpose')}
+          />
+        )}
+        {view === 'recovery' && (
+          <RecoveryView
+            onAskMentor={() => setView('mentor')}
+            onGoHome={() => setView('home')}
+          />
+        )}
+        {view === 'purpose' && <PurposeView />}
       </div>
 
       <nav className="tabs">
         {([
+          ['home', 'Home'],
           ['journey', 'Journey'],
           ['mentor', 'FARO'],
-          ['purpose', 'Purpose'],
+          ['progress', 'Progress'],
         ] as [Tab, string][]).map(([id, label]) => (
           <button
             key={id}
             className={`tab${tab === id ? ' tab--active' : ''}`}
-            onClick={() => setTab(id)}
+            onClick={() => setView(id)}
           >
             {label}
           </button>

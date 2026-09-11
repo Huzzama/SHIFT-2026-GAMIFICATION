@@ -109,18 +109,34 @@ export function nextBestAction(
   }
 }
 
+const openStops = (journey: Journey) =>
+  journey.milestones.filter(
+    (m) => m.status === 'missed' || m.status === 'current' || m.status === 'upcoming',
+  )
+
+/**
+ * The Comeback Mission: the smallest open thing on the route.
+ *
+ * Size is the whole point. This is not the most important step or the most
+ * overdue one - it is the one least likely to be postponed again, because the
+ * goal is breaking the inertia of returning, not catching up.
+ */
+export function comebackMilestone(journey: Journey): JourneyMilestone | null {
+  const open = openStops(journey)
+  if (open.length === 0) return null
+  return [...open].sort((a, b) => a.estimatedMinutes - b.estimatedMinutes)[0]
+}
+
 /**
  * A recovery route: three small sessions, never "catch up on everything".
  * Today's step is always the smallest one - breaking inertia is the goal.
  */
 export function recoveryRoute(journey: Journey): RecoveryStep[] {
-  const open = journey.milestones
-    .filter((m) => m.status === 'missed' || m.status === 'current' || m.status === 'upcoming')
-    .slice(0, 6)
+  const open = openStops(journey).slice(0, 6)
   if (open.length === 0) return []
 
-  const bySize = [...open].sort((a, b) => a.estimatedMinutes - b.estimatedMinutes)
-  const today = bySize[0]
+  const today = comebackMilestone(journey)
+  if (!today) return []
   const rest = open.filter((m) => m.id !== today.id)
 
   const steps: RecoveryStep[] = [

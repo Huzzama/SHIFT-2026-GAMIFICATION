@@ -136,6 +136,73 @@ export interface RecoveryStep {
   kind: 'comeback_mission' | 'review' | 'continue'
 }
 
+/**
+ * One completed step, recorded by FARO itself.
+ *
+ * This is FARO's own record of a study session, not a Canvas submission. It is
+ * what lets momentum, the journey and the achievements respond immediately
+ * instead of waiting for Canvas to sync.
+ */
+export interface StudySession {
+  id: string
+  milestoneId: string
+  assignmentId: number
+  title: string
+  minutes: number
+  at: string
+  /** Overdue items open at the moment this session started. */
+  pendingAtStart: number
+  /** True when the step fitted the time the student said they had. */
+  fitAvailableTime: boolean
+}
+
+/** What life did, in the student's words. Drives the intervention, nothing else. */
+export type LifeState =
+  | 'less_time'
+  | 'overwhelmed'
+  | 'dont_understand'
+  | 'lost_routine'
+  | 'need_break'
+  | 'ready'
+
+export type InterventionKind =
+  | 'shrink_session'
+  | 'single_action'
+  | 'mentor'
+  | 'comeback_mission'
+  | 'pause'
+  | 'continue'
+
+export interface Intervention {
+  kind: InterventionKind
+  headline: string
+  body: string
+  /** Suggested session length for this state, in minutes. */
+  minutes: number
+  cta: string
+}
+
+export type AchievementId =
+  | 'the_comeback'
+  | 'back_on_track'
+  | 'weathered_the_storm'
+  | 'smart_session'
+  | 'finisher'
+
+/**
+ * Resilience, not badge spam. Every one of these is earned by persisting
+ * through something, never by clicking around.
+ */
+export interface Achievement {
+  id: AchievementId
+  title: string
+  description: string
+  earned: boolean
+  earnedAt: string | null
+  /** Shown while unearned: what it would take. Never a scold. */
+  hint: string
+}
+
 export type MentorStyle =
   | 'direct'
   | 'encouraging'

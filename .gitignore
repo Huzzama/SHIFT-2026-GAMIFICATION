@@ -6,3 +6,5 @@ dist
 *.log
 
 faro-src.tgz
+
+/faro/

@@ -41,9 +41,21 @@ function Stop({ m }: { m: JourneyMilestone }) {
 }
 
 export function JourneyView({ onAskMentor }: { onAskMentor: () => void }) {
-  const { journey, friction, nextAction, recovery, purpose, availableMinutes } = useStore()
+  const {
+    journey,
+    friction,
+    nextAction,
+    recovery,
+    purpose,
+    availableMinutes,
+    completeMilestone,
+  } = useStore()
 
   if (!journey || !friction) return <p className="muted">Loading your route…</p>
+
+  const nextMilestone = nextAction
+    ? journey.milestones.find((m) => m.id === nextAction.milestoneId)
+    : undefined
 
   const groups = journey.milestones.reduce<Record<string, JourneyMilestone[]>>(
     (acc, m) => {
@@ -102,7 +114,14 @@ export function JourneyView({ onAskMentor }: { onAskMentor: () => void }) {
             {nextAction.reason}
           </div>
           <div className="nba__cta row">
-            <button className="btn btn--beacon" style={{ flex: 1 }}>Start this step</button>
+            <button
+              className="btn btn--beacon"
+              style={{ flex: 1 }}
+              disabled={!nextMilestone}
+              onClick={() => nextMilestone && completeMilestone(nextMilestone)}
+            >
+              Start this step
+            </button>
             <button className="btn btn--ghost" onClick={onAskMentor}>Ask FARO</button>
           </div>
         </div>

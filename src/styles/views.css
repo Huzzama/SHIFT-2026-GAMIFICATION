@@ -132,3 +132,123 @@
 .composer__input:focus { outline: 2px solid var(--sea-300); outline-offset: 1px; }
 
 .mentor__note { font-size: var(--text-xs); color: var(--sea-400); line-height: 1.5; }
+
+/* Dashboard -------------------------------------------------------------- */
+.hero {
+  background: linear-gradient(160deg, var(--ink-900), var(--ink-700));
+  color: var(--paper);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-4) var(--space-4);
+}
+.hero__greet { font-size: var(--text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--beacon-400); font-weight: 600; }
+.hero__course { font-size: var(--text-xl); font-weight: 650; margin: var(--space-2) 0 var(--space-4); line-height: 1.25; }
+.hero__meter .meter { background: rgba(255, 255, 255, 0.18); }
+.hero__stats { display: flex; justify-content: space-between; font-size: var(--text-xs); color: var(--mist-200); margin-top: var(--space-2); }
+.hero__dest { margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid rgba(255, 255, 255, 0.14); font-size: var(--text-sm); line-height: 1.5; }
+.hero__dest-label { display: block; font-size: var(--text-xs); letter-spacing: 0.1em; text-transform: uppercase; color: var(--sea-300); margin-bottom: 2px; }
+
+.banner {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--mist-200);
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  transition: border-color var(--transition), background var(--transition);
+}
+.banner:hover { border-color: var(--sea-300); background: var(--mist-100); }
+.banner__title { font-size: var(--text-md); font-weight: 620; }
+.banner__body { font-size: var(--text-sm); color: var(--sea-400); line-height: 1.5; margin-top: var(--space-1); }
+.banner__cta { display: inline-block; margin-top: var(--space-3); font-size: var(--text-sm); font-weight: 600; color: var(--ink-800); }
+.banner--welcome { background: var(--beacon-100); border-color: var(--beacon-400); }
+.banner--welcome:hover { background: var(--beacon-100); border-color: var(--beacon-500); }
+.banner--welcome .banner__body { color: var(--ink-700); }
+
+/* Safe harbor (planned pause) -------------------------------------------- */
+.harbor {
+  background: var(--ink-900);
+  color: var(--paper);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-4);
+}
+.harbor__label { font-size: var(--text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--sea-300); font-weight: 600; }
+.harbor__title { font-size: var(--text-lg); font-weight: 620; margin: var(--space-2) 0; }
+.harbor__body { font-size: var(--text-sm); color: var(--mist-200); line-height: 1.6; margin: 0 0 var(--space-4); }
+
+/* Recovery --------------------------------------------------------------- */
+.intervention {
+  background: var(--mist-100);
+  border: 1px solid var(--mist-200);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+.intervention__headline { font-size: var(--text-md); font-weight: 620; }
+.intervention__body { font-size: var(--text-sm); color: var(--ink-700); line-height: 1.6; margin: var(--space-2) 0 0; }
+.intervention__meta { font-size: var(--text-xs); color: var(--sea-400); margin-top: var(--space-3); }
+
+.mission {
+  background: var(--ink-900);
+  color: var(--paper);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+.mission__flag { font-size: var(--text-xs); letter-spacing: 0.12em; text-transform: uppercase; color: var(--beacon-400); font-weight: 600; }
+.mission__title { font-size: var(--text-lg); font-weight: 620; margin: var(--space-2) 0 var(--space-1); }
+.mission__body { font-size: var(--text-sm); color: var(--mist-200); line-height: 1.6; margin: 0 0 var(--space-4); }
+.mission--done { background: var(--moss-500); }
+.mission--done .mission__flag { color: var(--moss-100); }
+.mission--done .mission__body { color: var(--moss-100); }
+
+.backbar {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: var(--space-3) var(--space-4) 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--sea-400);
+}
+.backbar:hover { color: var(--ink-800); }
+
+.brand--button { border: 0; background: transparent; padding: 0; }
+
+/* Progress --------------------------------------------------------------- */
+.stats { display: flex; gap: var(--space-3); }
+.stat { flex: 1; }
+.stat__value { font-size: var(--text-lg); font-weight: 650; }
+.stat__label { font-size: var(--text-xs); color: var(--sea-400); margin-top: 2px; }
+
+.meter--thin { height: 4px; }
+
+.modules { list-style: none; margin: var(--space-3) 0 0; padding: 0; }
+.module-row + .module-row { margin-top: var(--space-3); }
+.module-row__head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.module-row__name { font-size: var(--text-sm); }
+.module-row__count { font-size: var(--text-xs); color: var(--sea-400); }
+
+.badges { list-style: none; margin: 0; padding: 0; }
+.badge { display: flex; gap: var(--space-3); padding: var(--space-3) 0; border-bottom: 1px dashed var(--mist-200); }
+.badge:last-child { border-bottom: 0; }
+.badge__mark {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin-top: 4px;
+  border-radius: 3px;
+  border: 2px solid var(--mist-200);
+  background: #fff;
+}
+.badge__title { font-size: var(--text-sm); font-weight: 560; color: var(--sea-400); }
+.badge__body { font-size: var(--text-xs); color: var(--sea-400); line-height: 1.5; margin-top: 2px; }
+.badge--earned .badge__mark { background: var(--beacon-500); border-color: var(--beacon-500); }
+.badge--earned .badge__title { color: var(--ink-900); font-weight: 620; }
+.badge--earned .badge__body { color: var(--ink-700); }
+
+.sessions { list-style: none; margin: var(--space-3) 0 0; padding: 0; }
+.sessions li { display: flex; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px dashed var(--mist-200); }
+.sessions li:last-child { border-bottom: 0; }
+.sessions__title { font-size: var(--text-sm); }
+.sessions__time { font-size: var(--text-xs); color: var(--sea-400); flex: none; }
+
+.destination--button { display: block; width: 100%; text-align: left; border: 0; }
