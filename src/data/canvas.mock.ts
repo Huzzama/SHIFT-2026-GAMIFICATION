@@ -8,6 +8,9 @@
  *
  * The scenario: a working adult, 5 weeks into a 6-module course, who stopped
  * 5 days ago. That is the exact moment FARO is built for.
+ *
+ * Course content is in Spanish because the pilot institution teaches in
+ * Spanish. FARO never translates Canvas content - only its own interface.
  */
 import type {
   CanvasActivityEvent,
@@ -23,19 +26,19 @@ const daysAhead = (d: number) => new Date(now + d * DAY).toISOString()
 
 export const mockCourse: CanvasCourse = {
   id: 4021,
-  name: 'Project Management Essentials',
-  course_code: 'PM-101',
+  name: 'Gestión de Proyectos',
+  course_code: 'GP-101',
   start_at: daysAgo(35),
   end_at: daysAhead(28),
 }
 
 export const mockModules: CanvasModule[] = [
-  { id: 1, course_id: 4021, name: 'Foundations', position: 1, state: 'completed', items_count: 3, completed_items_count: 3 },
-  { id: 2, course_id: 4021, name: 'Scope & Planning', position: 2, state: 'completed', items_count: 3, completed_items_count: 3 },
-  { id: 3, course_id: 4021, name: 'Schedule & Cost', position: 3, state: 'started', items_count: 3, completed_items_count: 1 },
-  { id: 4, course_id: 4021, name: 'Risk', position: 4, state: 'unlocked', items_count: 3, completed_items_count: 0 },
-  { id: 5, course_id: 4021, name: 'Stakeholders', position: 5, state: 'locked', items_count: 2, completed_items_count: 0 },
-  { id: 6, course_id: 4021, name: 'Closing the Project', position: 6, state: 'locked', items_count: 2, completed_items_count: 0 },
+  { id: 1, course_id: 4021, name: 'Fundamentos', position: 1, state: 'completed', items_count: 3, completed_items_count: 3 },
+  { id: 2, course_id: 4021, name: 'Alcance y planeación', position: 2, state: 'completed', items_count: 3, completed_items_count: 3 },
+  { id: 3, course_id: 4021, name: 'Cronograma y costos', position: 3, state: 'started', items_count: 3, completed_items_count: 1 },
+  { id: 4, course_id: 4021, name: 'Riesgos', position: 4, state: 'unlocked', items_count: 3, completed_items_count: 0 },
+  { id: 5, course_id: 4021, name: 'Interesados', position: 5, state: 'locked', items_count: 2, completed_items_count: 0 },
+  { id: 6, course_id: 4021, name: 'Cierre del proyecto', position: 6, state: 'locked', items_count: 2, completed_items_count: 0 },
 ]
 
 let assignmentId = 100
@@ -70,27 +73,27 @@ const make = (
 }
 
 export const mockAssignments: CanvasAssignment[] = [
-  make(1, 'Welcome & course map', -30, 10, true),
-  make(1, 'What a project really is', -28, 15, true),
-  make(1, 'Module 1 quiz', -25, 20, true),
+  make(1, 'Bienvenida y mapa del curso', -30, 10, true),
+  make(1, 'Qué es realmente un proyecto', -28, 15, true),
+  make(1, 'Quiz del módulo 1', -25, 20, true),
 
-  make(2, 'Defining scope', -21, 25, true),
-  make(2, 'Work breakdown structure', -18, 30, true),
-  make(2, 'Module 2 quiz', -15, 20, true),
+  make(2, 'Definir el alcance', -21, 25, true),
+  make(2, 'Estructura de desglose del trabajo (EDT)', -18, 30, true),
+  make(2, 'Quiz del módulo 2', -15, 20, true),
 
-  make(3, 'Reading: estimating duration', -9, 15, true),
-  make(3, 'Build a project schedule', -4, 45, false),
-  make(3, 'Module 3 quiz', -1, 20, false),
+  make(3, 'Lectura: estimar duraciones', -9, 15, true),
+  make(3, 'Construir un cronograma de proyecto', -4, 45, false),
+  make(3, 'Quiz del módulo 3', -1, 20, false),
 
-  make(4, 'Reading: identifying risk', 3, 15, false),
-  make(4, 'Risk register exercise', 6, 40, false),
-  make(4, 'Module 4 quiz', 8, 20, false),
+  make(4, 'Lectura: identificar riesgos', 3, 15, false),
+  make(4, 'Ejercicio: registro de riesgos', 6, 40, false),
+  make(4, 'Quiz del módulo 4', 8, 20, false),
 
-  make(5, 'Stakeholder mapping', 14, 30, false),
-  make(5, 'Module 5 quiz', 16, 20, false),
+  make(5, 'Mapa de interesados', 14, 30, false),
+  make(5, 'Quiz del módulo 5', 16, 20, false),
 
-  make(6, 'Project closure report', 24, 60, false),
-  make(6, 'Final reflection', 27, 25, false),
+  make(6, 'Informe de cierre del proyecto', 24, 60, false),
+  make(6, 'Reflexión final', 27, 25, false),
 ]
 
 /** Activity stops 5 days ago: the disconnection FARO should catch. */

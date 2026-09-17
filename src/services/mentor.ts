@@ -8,9 +8,11 @@
  * the tools and the guardrails.
  *
  * Guardrail that holds in both: the mentor guides, it does not produce graded
- * work. Style changes the voice, never the rules.
+ * work. Style changes the voice, never the rules. Language changes the words,
+ * never the rules either.
  */
-import type { MentorContext, MentorMessage, MentorStyle } from '@/types'
+import { dict } from '@/i18n'
+import type { Lang, MentorContext, MentorMessage, MentorStyle } from '@/types'
 
 export interface MentorReply {
   text: string
@@ -27,136 +29,89 @@ export interface MentorService {
 
 /* ------------------------------------------------------------- guardrails */
 
-const DO_IT_FOR_ME =
-  /\b(write|do|solve|answer|complete|submit|finish)\b.{0,30}\b(my|the)\b.{0,20}\b(quiz|exam|test|assignment|essay|homework|report|reflection)\b/i
-
-const REFUSAL =
-  'I will not write graded work for you - that is yours, and it is the part that actually teaches you. What I can do is break it into steps, check your reasoning, or explain the part that is stuck. Where do you want to start?'
+const DO_IT_FOR_ME: Record<Lang, RegExp> = {
+  en: /\b(write|do|solve|answer|complete|submit|finish)\b.{0,30}\b(my|the)\b.{0,20}\b(quiz|exam|test|assignment|essay|homework|report|reflection)\b/i,
+  es: /\b(escribe|haz|hazme|resuelve|responde|contesta|completa|termina|entrega)\b.{0,30}\b(mi|el|la|este|esta)\b.{0,24}\b(quiz|examen|tarea|ensayo|reporte|reflexi[oó]n|actividad|cuestionario)\b/i,
+}
 
 /* ------------------------------------------------------------------ voice */
 
-const openers: Record<MentorStyle, (c: MentorContext) => string> = {
-  direct: () => '',
-  encouraging: (c) => (c.momentum < 60 ? 'You came back, and that is the hard part. ' : 'Good - you are moving. '),
-  detailed: () => '',
-  friendly: () => 'Hey. ',
-  challenge: () => 'Alright, let us push a little. ',
-}
-
-const closers: Record<MentorStyle, string> = {
-  direct: '',
-  encouraging: ' You are closer than it feels.',
-  detailed: '',
-  friendly: ' I am here if it gets messy.',
-  challenge: ' Can you get it done before you close this tab?',
-}
-
-function voice(style: MentorStyle, ctx: MentorContext, body: string): string {
-  return `${openers[style](ctx)}${body}${closers[style]}`.trim()
+function voice(ctx: MentorContext, body: string): string {
+  const v = dict(ctx.language).mentor.voice
+  const opener = v.openers[ctx.style](ctx.momentum < 60)
+  return `${opener}${body}${v.closers[ctx.style]}`.trim()
 }
 
 /* ------------------------------------------------------------ local mentor */
 
 type Intent = 'next' | 'behind' | 'no_time' | 'explain' | 'unmotivated' | 'plan' | 'other'
 
-function detectIntent(message: string): Intent {
-  const m = message.toLowerCase()
-  if (/\b(next|what should i do|where do i start|start)\b/.test(m)) return 'next'
-  if (/\b(behind|catch up|missed|late|lost)\b/.test(m)) return 'behind'
-  if (/\b(no time|busy|only \d+ ?min|10 minutes|short on time)\b/.test(m)) return 'no_time'
-  if (/\b(explain|understand|confused|what is|how does|don'?t get)\b/.test(m)) return 'explain'
-  if (/\b(motivat|tired|give up|quit|why bother|pointless)\b/.test(m)) return 'unmotivated'
-  if (/\b(plan|schedule|organi[sz]e|week)\b/.test(m)) return 'plan'
-  return 'other'
+const intents: Record<Lang, [Intent, RegExp][]> = {
+  en: [
+    ['next', /\b(next|what should i do|where do i start|start)\b/],
+    ['behind', /\b(behind|catch up|missed|late|lost)\b/],
+    ['no_time', /\b(no time|busy|only \d+ ?min|10 minutes|short on time)\b/],
+    ['explain', /\b(explain|understand|confused|what is|how does|don'?t get)\b/],
+    ['unmotivated', /\b(motivat|tired|give up|quit|why bother|pointless|break)\b/],
+    ['plan', /\b(plan|schedule|organi[sz]e|week)\b/],
+  ],
+  es: [
+    ['next', /\b(siguiente|qu[eé] hago|por d[oó]nde empiezo|empezar|ahora)\b/],
+    ['behind', /\b(atrasad[oa]|al corriente|perd[ií]|tarde|retras|regreso|recuperaci[oó]n)\b/],
+    ['no_time', /\b(no tengo tiempo|ocupad[oa]|solo (tengo )?\d+ ?min|10 minutos|poco tiempo|menos tiempo)\b/],
+    ['explain', /\b(expl[ií]ca|entiendo|confund|qu[eé] es|c[oó]mo funciona|no me queda|ejemplo)\b/],
+    ['unmotivated', /\b(motiva|cansad[oa]|rendir|renuncio|para qu[eé]|sin sentido|pausa|ganas)\b/],
+    ['plan', /\b(plan|agenda|organiza|semana|horario)\b/],
+  ],
 }
 
-function destinationLine(c: MentorContext): string {
-  return c.destination ? ` You said this course is how you get to: ${c.destination}.` : ''
+function detectIntent(message: string, lang: Lang): Intent {
+  const m = message.toLowerCase()
+  for (const [intent, re] of intents[lang]) if (re.test(m)) return intent
+  // Fall back to the other language: students mix them.
+  const other: Lang = lang === 'es' ? 'en' : 'es'
+  for (const [intent, re] of intents[other]) if (re.test(m)) return intent
+  return 'other'
 }
 
 export class LocalMentorService implements MentorService {
   async send({ message, context }: { message: string; context: MentorContext; history: MentorMessage[] }): Promise<MentorReply> {
     await new Promise((r) => setTimeout(r, 350))
 
-    if (DO_IT_FOR_ME.test(message)) {
-      return { text: REFUSAL, suggestions: ['Break it into steps', 'Explain the concept', 'Check my reasoning'] }
+    const t = dict(context.language).mentor
+    const r = t.replies
+
+    if (DO_IT_FOR_ME.es.test(message) || DO_IT_FOR_ME.en.test(message)) {
+      return { text: t.refusal, suggestions: t.refusalSuggest }
     }
 
     const next = context.next_activity
     const mins = context.estimated_time ?? context.available_time
 
-    switch (detectIntent(message)) {
+    switch (detectIntent(message, context.language)) {
       case 'next':
-        return {
-          text: voice(
-            context.style,
-            context,
-            next
-              ? `Do this one thing: ${next}. About ${mins} minutes. Nothing else on the list matters until that is done.`
-              : 'You are clear for now - nothing is waiting on you. Rest counts too.',
-          ),
-          suggestions: ['I only have 10 minutes', 'Help me focus', 'Why this one?'],
-        }
-
+        return { text: voice(context, r.next(next, mins)), suggestions: r.nextSuggest }
       case 'behind':
         return {
-          text: voice(
-            context.style,
-            context,
-            `You are not starting over - you are at ${context.progress}% and that does not expire. We are not catching everything up today. Today is one small step: ${next ?? 'a short review'}, about ${Math.min(10, mins)} minutes. Then we recalculate the rest of the route.`,
-          ),
-          suggestions: ['Show me the recovery route', 'Start the comeback mission', 'I have less time than before'],
+          text: voice(context, r.behind(context.progress, next, Math.min(10, mins))),
+          suggestions: r.behindSuggest,
         }
-
       case 'no_time':
-        return {
-          text: voice(
-            context.style,
-            context,
-            `Ten minutes is enough to stay in the course. Open ${next ?? 'the current module'}, read or do the first part only, and stop. Finishing is not the goal today - not breaking the thread is.`,
-          ),
-          suggestions: ['Start a 10-minute session', 'What can I skip?', 'Plan my week'],
-        }
-
+        return { text: voice(context, r.noTime(next)), suggestions: r.noTimeSuggest }
       case 'explain':
-        return {
-          text: voice(
-            context.style,
-            context,
-            `Tell me the specific piece that is not landing - a term, a step, or a question you got wrong - and I will walk you through it with an example from ${context.course}. I will not hand you the answer to graded work, but I will make sure you can get there yourself.`,
-          ),
-          suggestions: ['Give me an example', 'Explain it simply', 'Quiz me on it'],
-        }
-
+        return { text: voice(context, r.explain(context.course)), suggestions: r.explainSuggest }
       case 'unmotivated':
         return {
-          text: voice(
-            context.style,
-            context,
-            `That is allowed, and it is not a sign you should stop.${destinationLine(context)} You do not have to feel motivated to do ten minutes. Pick the smallest thing - ${next ?? 'one short review'} - and let momentum come after the action, not before it.`,
-          ),
-          suggestions: ['Give me a 10-minute mission', 'I need a break', 'Remind me why I started'],
+          text: voice(context, r.unmotivated(context.destination, next)),
+          suggestions: r.unmotivatedSuggest,
         }
-
       case 'plan':
         return {
-          text: voice(
-            context.style,
-            context,
-            `With about ${context.available_time} minutes on a normal day: two short sessions this week beats one long one you never schedule. Session one: ${next ?? 'the current step'}. Session two: review what you just did for ten minutes. That is the whole plan - small enough that life cannot break it.`,
-          ),
-          suggestions: ['Show my journey', 'Make it smaller', 'What if I miss a day?'],
+          text: voice(context, r.plan(context.available_time, next)),
+          suggestions: r.planSuggest,
         }
-
       default:
-        return {
-          text: voice(
-            context.style,
-            context,
-            `I am here for ${context.course}. I can point you at the next step, explain something that is not clicking, help you plan around a short week, or build a way back if you have been away.`,
-          ),
-          suggestions: ['What should I do next?', 'I am behind', 'Explain something'],
-        }
+        return { text: voice(context, r.other(context.course)), suggestions: r.otherSuggest }
     }
   }
 }
@@ -178,3 +133,6 @@ export class HttpMentorService implements MentorService {
 }
 
 export const mentorService: MentorService = new LocalMentorService()
+
+/** Kept for callers that want the style list in display order. */
+export const mentorStyles: MentorStyle[] = ['direct', 'encouraging', 'detailed', 'friendly', 'challenge']

@@ -5,7 +5,15 @@
  * mentor never receives it - no name, no email, no Canvas ids, no message
  * history beyond the current conversation, no dropout classification.
  */
-import type { Journey, MentorContext, MentorStyle, NextBestAction, Purpose, FrictionSignal } from '@/types'
+import type {
+  FrictionSignal,
+  Journey,
+  Lang,
+  MentorContext,
+  MentorStyle,
+  NextBestAction,
+  Purpose,
+} from '@/types'
 
 export function buildMentorContext(args: {
   journey: Journey
@@ -14,8 +22,9 @@ export function buildMentorContext(args: {
   nextAction: NextBestAction | null
   availableMinutes: number
   style: MentorStyle
+  language: Lang
 }): MentorContext {
-  const { journey, friction, purpose, nextAction, availableMinutes, style } = args
+  const { journey, friction, purpose, nextAction, availableMinutes, style, language } = args
   return {
     course: journey.courseName,
     progress: journey.progressPercent,
@@ -27,5 +36,6 @@ export function buildMentorContext(args: {
     momentum: friction.momentum,
     friction_state: friction.state,
     style,
+    language,
   }
 }

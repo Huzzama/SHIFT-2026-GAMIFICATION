@@ -6,7 +6,8 @@
  * by a data-driven model without touching the callers.
  */
 import type { CourseSnapshot } from '@/data/client'
-import type { FrictionSignal, FrictionState } from '@/types'
+import { dict } from '@/i18n'
+import type { FrictionSignal, FrictionState, Lang } from '@/types'
 
 export const frictionRules = {
   frictionDays: 3,
@@ -56,19 +57,11 @@ function stateFor(days: number, pending: number, returning: boolean): FrictionSt
   return 'FLOWING'
 }
 
-/** Student-facing wording. Never a risk score, never a count of what is late. */
-const headlines: Record<FrictionState, string> = {
-  FLOWING: 'You have a good rhythm going.',
-  FRICTION: 'Your journey needs a little attention.',
-  POSSIBLE_OVERWHELM: 'A lot has piled up. Let us take one step at a time.',
-  DISCONNECTION: 'Your progress is still here, exactly where you left it.',
-  RECOVERY: 'Welcome back. Let us pick the route up again.',
-}
-
 export function evaluateFriction(
   snapshot: CourseSnapshot,
   /** True when the student is opening FARO after a period away. */
   returningFromAway = false,
+  lang: Lang = 'es',
 ): FrictionSignal {
   const days = daysSinceLastActivity(snapshot)
   const pending = pendingCount(snapshot)
@@ -78,6 +71,7 @@ export function evaluateFriction(
     daysSinceActivity: days,
     pendingCount: pending,
     momentum: momentumFor(days, pending),
-    headline: headlines[state],
+    // Student-facing wording. Never a risk score, never a count of what is late.
+    headline: dict(lang).friction[state],
   }
 }

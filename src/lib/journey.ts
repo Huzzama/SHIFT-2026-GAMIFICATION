@@ -7,10 +7,12 @@
  * comes next instead of demanding everything at once.
  */
 import type { CourseSnapshot } from '@/data/client'
+import { dict } from '@/i18n'
 import type {
   FrictionSignal,
   Journey,
   JourneyMilestone,
+  Lang,
   NextBestAction,
   RecoveryStep,
 } from '@/types'
@@ -83,6 +85,7 @@ export function buildJourney(
 export function nextBestAction(
   journey: Journey,
   availableMinutes: number,
+  lang: Lang = 'es',
 ): NextBestAction | null {
   const open = journey.milestones.filter(
     (m) => m.status === 'missed' || m.status === 'current' || m.status === 'upcoming',
@@ -94,12 +97,13 @@ export function nextBestAction(
     fits.sort((a, b) => a.estimatedMinutes - b.estimatedMinutes)[0] ??
     open.sort((a, b) => a.estimatedMinutes - b.estimatedMinutes)[0]
 
+  const t = dict(lang).journey.nbaReason
   const reason =
     pick.status === 'missed'
-      ? 'This one reopens the route. Everything after it gets easier.'
+      ? t.missed
       : pick.estimatedMinutes <= availableMinutes
-        ? 'It fits the time you have today and keeps your journey moving.'
-        : 'It is the shortest step available - start it and pause whenever you need.'
+        ? t.fits
+        : t.shortest
 
   return {
     milestoneId: pick.id,
@@ -131,7 +135,7 @@ export function comebackMilestone(journey: Journey): JourneyMilestone | null {
  * A recovery route: three small sessions, never "catch up on everything".
  * Today's step is always the smallest one - breaking inertia is the goal.
  */
-export function recoveryRoute(journey: Journey): RecoveryStep[] {
+export function recoveryRoute(journey: Journey, lang: Lang = 'es'): RecoveryStep[] {
   const open = openStops(journey).slice(0, 6)
   if (open.length === 0) return []
 
@@ -142,7 +146,7 @@ export function recoveryRoute(journey: Journey): RecoveryStep[] {
   const steps: RecoveryStep[] = [
     {
       when: 'today',
-      title: `Reconnect: ${today.title}`,
+      title: `${dict(lang).journey.reconnect} ${today.title}`,
       estimatedMinutes: Math.min(10, today.estimatedMinutes),
       kind: 'comeback_mission',
     },

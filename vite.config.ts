@@ -1,12 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// No node-only imports here on purpose: the config stays dependency-light and
-// the project needs no @types/node just to resolve one alias.
+// `/src` is root-relative in Vite, so the alias needs no node path helpers
+// and behaves the same on Windows and macOS.
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: { '@': new URL('./src', import.meta.url).pathname },
+    alias: { '@': '/src' },
   },
   build: {
     outDir: 'dist',

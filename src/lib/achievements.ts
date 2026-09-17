@@ -7,46 +7,16 @@
  * finishing. Nothing here rewards a click.
  */
 import { frictionRules } from './friction'
-import type { Achievement, AchievementId, Journey, StudySession } from '@/types'
+import { dict } from '@/i18n'
+import type { Achievement, AchievementId, Journey, Lang, StudySession } from '@/types'
 
-interface Catalogue {
-  id: AchievementId
-  title: string
-  description: string
-  hint: string
-}
-
-const catalogue: Catalogue[] = [
-  {
-    id: 'the_comeback',
-    title: 'The Comeback',
-    description: 'You returned after a difficult stretch away.',
-    hint: 'Earned by coming back and completing one step after time away.',
-  },
-  {
-    id: 'back_on_track',
-    title: 'Back on Track',
-    description: 'You rebuilt a learning rhythm instead of starting over.',
-    hint: 'Earned by completing two steps and bringing your momentum back up.',
-  },
-  {
-    id: 'weathered_the_storm',
-    title: 'Weathered the Storm',
-    description: 'You kept moving during a week when work had piled up.',
-    hint: 'Earned by completing a step while more than one item was still open.',
-  },
-  {
-    id: 'smart_session',
-    title: 'Smart Session',
-    description: 'You finished a step inside the time you actually had.',
-    hint: 'Earned by completing a step that fitted your available time.',
-  },
-  {
-    id: 'finisher',
-    title: 'Finisher',
-    description: 'You completed the course.',
-    hint: 'Earned at the end of the route.',
-  },
+/** Order of display. Copy for each lives in `i18n/`. */
+const order: AchievementId[] = [
+  'the_comeback',
+  'back_on_track',
+  'weathered_the_storm',
+  'smart_session',
+  'finisher',
 ]
 
 export function evaluateAchievements(args: {
@@ -55,8 +25,10 @@ export function evaluateAchievements(args: {
   momentum: number
   /** Days the student had been away when this visit started. */
   awayGap: number
+  lang: Lang
 }): Achievement[] {
-  const { sessions, journey, momentum, awayGap } = args
+  const { sessions, journey, momentum, awayGap, lang } = args
+  const copy = dict(lang).achievements
   const first = sessions[0] ?? null
 
   const earnedAt: Partial<Record<AchievementId, string>> = {}
@@ -77,9 +49,10 @@ export function evaluateAchievements(args: {
     earnedAt.finisher = sessions[sessions.length - 1]?.at ?? new Date().toISOString()
   }
 
-  return catalogue.map((c) => ({
-    ...c,
-    earned: Boolean(earnedAt[c.id]),
-    earnedAt: earnedAt[c.id] ?? null,
+  return order.map((id) => ({
+    id,
+    ...copy[id],
+    earned: Boolean(earnedAt[id]),
+    earnedAt: earnedAt[id] ?? null,
   }))
 }

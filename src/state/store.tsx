@@ -19,6 +19,7 @@ import {
   type ReactNode,
 } from 'react'
 import { faroClient, type CourseSnapshot } from '@/data/client'
+import { detectLang, dict, type Dict } from '@/i18n'
 import { evaluateAchievements } from '@/lib/achievements'
 import {
   daysSinceLastActivity,
@@ -28,6 +29,8 @@ import {
 } from '@/lib/friction'
 import { buildJourney, nextBestAction, recoveryRoute } from '@/lib/journey'
 import { minutesFor } from '@/lib/lifeHappened'
+import { computePoints, type PointsBreakdown } from '@/lib/points'
+import { learningRhythm } from '@/lib/rhythm'
 import { applySessions } from '@/lib/sessions'
 import { readValue, writeValue, clearAll } from './storage'
 import type {
@@ -35,6 +38,7 @@ import type {
   FrictionSignal,
   Journey,
   JourneyMilestone,
+  Lang,
   LifeState,
   MentorMessage,
   MentorStyle,
@@ -46,6 +50,9 @@ import type {
 
 interface StoreValue {
   loading: boolean
+  lang: Lang
+  /** The active dictionary. Views read copy from here, never from literals. */
+  t: Dict
   snapshot: CourseSnapshot | null
   purpose: Purpose | null
   mentorStyle: MentorStyle
@@ -61,6 +68,11 @@ interface StoreValue {
   paused: boolean
   /** Days the student had been away when this visit started. */
   awayGap: number
+  /** Consecutive active days, ending today. Shown alongside momentum, never instead of it. */
+  rhythmDays: number
+  /** FARO Points: a configurable mock balance, see `lib/points.ts`. */
+  points: PointsBreakdown
+  setLang: (l: Lang) => void
   setPurpose: (p: Purpose) => void
   setMentorStyle: (s: MentorStyle) => void
   setAvailableMinutes: (m: number) => void
@@ -75,6 +87,7 @@ const StoreContext = createContext<StoreValue | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
+  const [lang, setLangState] = useState<Lang>(detectLang)
   const [snapshot, setSnapshot] = useState<CourseSnapshot | null>(null)
   const [purpose, setPurposeState] = useState<Purpose | null>(null)
   const [mentorStyle, setMentorStyleState] = useState<MentorStyle>('encouraging')
@@ -87,14 +100,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let alive = true
     ;(async () => {
-      const [p, s, m, done, pz] = await Promise.all([
+      const [p, s, m, done, pz, l] = await Promise.all([
         readValue<Purpose>('purpose'),
         readValue<MentorStyle>('mentorStyle'),
         readValue<number>('availableMinutes'),
         readValue<StudySession[]>('sessions'),
         readValue<boolean>('paused'),
+        readValue<Lang>('lang'),
       ])
       if (!alive) return
+      if (l === 'es' || l === 'en') setLangState(l)
       if (p) setPurposeState(p)
       if (s) setMentorStyleState(s)
       if (typeof m === 'number') setAvailableMinutesState(m)
@@ -109,6 +124,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => {
       alive = false
     }
+  }, [])
+
+  const setLang = useCallback((l: Lang) => {
+    setLangState(l)
+    void writeValue('lang', l)
+    // The mentor thread was written in the old language; start it fresh.
+    setMessages([])
   }, [])
 
   const setPurpose = useCallback((p: Purpose) => {
@@ -166,18 +188,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const returning = awayGap >= frictionRules.frictionDays && sessions.length === 0
 
   const friction = useMemo(
-    () => (effective ? evaluateFriction(effective, returning) : null),
-    [effective, returning],
+    () => (effective ? evaluateFriction(effective, returning, lang) : null),
+    [effective, returning, lang],
   )
   const journey = useMemo(
     () => (effective && friction ? buildJourney(effective, friction) : null),
     [effective, friction],
   )
   const nextAction = useMemo(
-    () => (journey ? nextBestAction(journey, availableMinutes) : null),
-    [journey, availableMinutes],
+    () => (journey ? nextBestAction(journey, availableMinutes, lang) : null),
+    [journey, availableMinutes, lang],
   )
-  const recovery = useMemo(() => (journey ? recoveryRoute(journey) : []), [journey])
+  const recovery = useMemo(
+    () => (journey ? recoveryRoute(journey, lang) : []),
+    [journey, lang],
+  )
 
   const achievements = useMemo(
     () =>
@@ -186,8 +211,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         journey,
         momentum: friction?.momentum ?? 0,
         awayGap,
+        lang,
       }),
-    [sessions, journey, friction, awayGap],
+    [sessions, journey, friction, awayGap, lang],
+  )
+
+  /** Consecutive active days, ending today - Learning Rhythm, see `lib/rhythm.ts`. */
+  const rhythmDays = useMemo(() => learningRhythm(sessions), [sessions])
+
+  /** FARO Points: config-driven, earned from the same real actions above. */
+  const points = useMemo(
+    () => computePoints({ sessions, journey, rhythmDays, awayGap }),
+    [sessions, journey, rhythmDays, awayGap],
   )
 
   /**
@@ -238,6 +273,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value: StoreValue = {
     loading,
+    lang,
+    t: dict(lang),
     snapshot: effective,
     purpose,
     mentorStyle,
@@ -252,6 +289,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     lifeState,
     paused,
     awayGap,
+    rhythmDays,
+    points,
+    setLang,
     setPurpose,
     setMentorStyle,
     setAvailableMinutes,

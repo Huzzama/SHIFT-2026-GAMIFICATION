@@ -56,6 +56,9 @@ export interface CanvasActivityEvent {
 
 /* -------------------------------------------------------------------- FARO */
 
+/** UI language. Also part of the mentor context: the model answers in it. */
+export type Lang = 'es' | 'en'
+
 export type PurposeGoal =
   | 'career_growth'
   | 'better_income'
@@ -234,4 +237,5 @@ export interface MentorContext {
   momentum: number
   friction_state: FrictionState
   style: MentorStyle
+  language: Lang
 }

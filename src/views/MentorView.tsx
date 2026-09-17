@@ -6,23 +6,19 @@
  * changes the voice; it never changes the academic or safety rules.
  */
 import { useEffect, useRef, useState } from 'react'
+import { Icon } from '@/components/Icon'
+import { Lighthouse } from '@/components/Lighthouse'
 import { useStore } from '@/state/store'
 import { buildMentorContext } from '@/lib/mentorContext'
-import { mentorService } from '@/services/mentor'
-import type { MentorMessage, MentorStyle } from '@/types'
-
-const STYLES: { id: MentorStyle; label: string }[] = [
-  { id: 'direct', label: 'Direct' },
-  { id: 'encouraging', label: 'Encouraging' },
-  { id: 'detailed', label: 'Detailed' },
-  { id: 'friendly', label: 'Friendly' },
-  { id: 'challenge', label: 'Challenge me' },
-]
+import { mentorService, mentorStyles } from '@/services/mentor'
+import type { MentorMessage } from '@/types'
 
 const uid = () => Math.random().toString(36).slice(2, 10)
 
 export function MentorView() {
   const {
+    t,
+    lang,
     journey,
     friction,
     purpose,
@@ -52,28 +48,21 @@ export function MentorView() {
         role: 'faro',
         at: new Date().toISOString(),
         text: away
-          ? `Welcome back. Your progress is still here - ${journey.progressPercent}% of ${journey.courseName}, exactly where you left it. We are not catching everything up today. Want a ten-minute way back in?`
-          : `${friction.headline} You are at ${journey.progressPercent}% of ${journey.courseName}. What do you need?`,
-        suggestions: away
-          ? ['Give me a 10-minute mission', 'I am behind', 'Plan my week']
-          : ['What should I do next?', 'Explain something', 'Plan my week'],
+          ? t.mentor.openAway(journey.progressPercent, journey.courseName)
+          : t.mentor.openFlow(friction.headline, journey.progressPercent, journey.courseName),
+        suggestions: away ? t.mentor.openAwaySuggest : t.mentor.openFlowSuggest,
       },
     ])
-  }, [friction, journey, messages.length, setMessages])
+  }, [friction, journey, messages.length, setMessages, t])
 
   if (!journey || !friction || !purpose) {
-    return <p className="muted">Getting your context ready…</p>
+    return <p className="muted">{t.mentor.preparing}</p>
   }
 
   const send = async (text: string) => {
     const clean = text.trim()
     if (!clean || thinking) return
-    const student: MentorMessage = {
-      id: uid(),
-      role: 'student',
-      text: clean,
-      at: new Date().toISOString(),
-    }
+    const student: MentorMessage = { id: uid(), role: 'student', text: clean, at: new Date().toISOString() }
     const history = [...messages, student]
     setMessages(history)
     setDraft('')
@@ -86,30 +75,17 @@ export function MentorView() {
       nextAction,
       availableMinutes,
       style: mentorStyle,
+      language: lang,
     })
 
     try {
       const reply = await mentorService.send({ message: clean, context, history })
       setMessages([
         ...history,
-        {
-          id: uid(),
-          role: 'faro',
-          text: reply.text,
-          at: new Date().toISOString(),
-          suggestions: reply.suggestions,
-        },
+        { id: uid(), role: 'faro', text: reply.text, at: new Date().toISOString(), suggestions: reply.suggestions },
       ])
     } catch {
-      setMessages([
-        ...history,
-        {
-          id: uid(),
-          role: 'faro',
-          text: 'I could not reach my side of things just now. Your progress is safe - try again in a moment.',
-          at: new Date().toISOString(),
-        },
-      ])
+      setMessages([...history, { id: uid(), role: 'faro', text: t.mentor.error, at: new Date().toISOString() }])
     } finally {
       setThinking(false)
     }
@@ -121,24 +97,36 @@ export function MentorView() {
   return (
     <div className="mentor">
       <div className="chips">
-        {STYLES.map((s) => (
+        {mentorStyles.map((s) => (
           <button
-            key={s.id}
-            className={`chip${mentorStyle === s.id ? ' chip--on' : ''}`}
-            onClick={() => setMentorStyle(s.id)}
+            key={s}
+            className={`chip${mentorStyle === s ? ' chip--on' : ''}`}
+            onClick={() => setMentorStyle(s)}
           >
-            {s.label}
+            {t.mentor.styles[s]}
           </button>
         ))}
       </div>
 
       <div className="mentor__thread" ref={threadRef}>
         {messages.map((m) => (
-          <div key={m.id} className={`bubble bubble--${m.role === 'faro' ? 'faro' : 'student'}`}>
-            {m.text}
+          <div key={m.id} className={`msg msg--${m.role}`}>
+            {m.role === 'faro' && (
+              <span className="msg__avatar">
+                <Lighthouse size={16} />
+              </span>
+            )}
+            <div className={`bubble bubble--${m.role}`}>{m.text}</div>
           </div>
         ))}
-        {thinking && <div className="bubble bubble--faro bubble--typing">FARO is thinking…</div>}
+        {thinking && (
+          <div className="msg msg--faro">
+            <span className="msg__avatar">
+              <Lighthouse size={16} />
+            </span>
+            <div className="bubble bubble--faro bubble--typing">{t.mentor.thinking}</div>
+          </div>
+        )}
       </div>
 
       {suggestions.length > 0 && (
@@ -155,7 +143,7 @@ export function MentorView() {
         <textarea
           className="composer__input"
           rows={1}
-          placeholder="Ask FARO anything about this course…"
+          placeholder={t.mentor.placeholder}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
@@ -166,14 +154,11 @@ export function MentorView() {
           }}
         />
         <button className="btn" disabled={!draft.trim() || thinking} onClick={() => void send(draft)}>
-          Send
+          {t.mentor.send} <Icon name="arrow" size={16} />
         </button>
       </div>
 
-      <p className="mentor__note">
-        FARO guides your learning. It will not write graded work for you, and it
-        only sees your course progress and the goal you set - never your personal data.
-      </p>
+      <p className="mentor__note">{t.mentor.note}</p>
     </div>
   )
 }

@@ -1,63 +1,79 @@
 /**
  * Home: "Where am I and what should I do next?"
  *
- * The whole screen is built to answer that in one look and then get out of the
- * way. There is exactly one recommended step, never a list of what is pending -
- * decision fatigue is part of the friction FARO exists to remove.
+ * Laid out like the brand sheet — hero, course card, three tinted stats, the
+ * four pillars, the effort banner — but every card carries FARO's logic:
+ * momentum instead of a streak, resilience achievements instead of points,
+ * the mentor where the mockup had "Comunidad". There is exactly one
+ * recommended step, never a list of what is pending.
  */
+import { CourseCard, PillarCard, StatCard } from '@/components/Cards'
+import { HeroArt } from '@/components/HeroArt'
+import { Icon } from '@/components/Icon'
+import { Wordmark } from '@/components/Wordmark'
 import { useStore } from '@/state/store'
 import type { LifeState } from '@/types'
 
-const greeting = () => {
-  const h = new Date().getHours()
-  if (h < 12) return 'Good morning'
-  if (h < 19) return 'Good afternoon'
-  return 'Good evening'
-}
+const hour = () => new Date().getHours()
 
 export function DashboardView({
   onAskMentor,
   onOpenRecovery,
   onOpenJourney,
+  onOpenProgress,
+  onOpenPurpose,
 }: {
   onAskMentor: () => void
   onOpenRecovery: (state?: LifeState) => void
   onOpenJourney: () => void
+  onOpenProgress: () => void
+  onOpenPurpose: () => void
 }) {
   const {
+    t,
     journey,
     friction,
     nextAction,
     purpose,
     availableMinutes,
     sessions,
+    achievements,
+    snapshot,
     paused,
+    rhythmDays,
     completeMilestone,
   } = useStore()
 
-  if (!journey || !friction) return <p className="muted">Finding your position…</p>
+  if (!journey || !friction || !snapshot) return <p className="muted">{t.shell.loading}</p>
+
+  const h = hour()
+  const greeting =
+    h < 12 ? t.home.greeting.morning : h < 19 ? t.home.greeting.afternoon : t.home.greeting.evening
 
   const milestone = nextAction
     ? journey.milestones.find((m) => m.id === nextAction.milestoneId)
     : undefined
 
-  const needsAttention =
-    friction.state !== 'FLOWING' && friction.state !== 'RECOVERY'
+  const needsAttention = friction.state !== 'FLOWING' && friction.state !== 'RECOVERY'
   const returning = friction.state === 'RECOVERY'
+  const earned = achievements.filter((a) => a.earned).length
+  const momentumWord =
+    friction.momentum >= 65
+      ? t.home.momentumCard.strong
+      : friction.momentum >= 40
+        ? t.home.momentumCard.building
+        : t.home.momentumCard.low
+  const rhythmSub = rhythmDays > 0 ? t.home.rhythmCard.active(rhythmDays) : t.home.rhythmCard.waiting
 
   if (paused) {
     return (
       <div className="stack">
         <div className="harbor">
-          <div className="harbor__label">Safe harbor</div>
-          <div className="harbor__title">You are on a planned pause.</div>
-          <p className="harbor__body">
-            Your progress is exactly where you left it. Nothing is expiring inside
-            FARO, and there is no streak to lose. Come back when you are ready and
-            the route will be waiting.
-          </p>
+          <div className="harbor__label">{t.home.harbor.label}</div>
+          <div className="harbor__title">{t.home.harbor.title}</div>
+          <p className="harbor__body">{t.home.harbor.body}</p>
           <button className="btn btn--beacon btn--block" onClick={() => onOpenRecovery('ready')}>
-            I'm ready to continue
+            {t.home.harbor.cta}
           </button>
         </div>
       </div>
@@ -66,97 +82,169 @@ export function DashboardView({
 
   return (
     <div className="stack">
-      <div className="hero">
-        <div className="hero__greet">{greeting()}</div>
-        <div className="hero__course">{journey.courseName}</div>
-        <div className="hero__meter">
-          <div className="meter">
-            <div className="meter__fill" style={{ width: `${journey.progressPercent}%` }} />
-          </div>
-          <div className="hero__stats">
-            <span>{journey.progressPercent}% of the route</span>
-            <span>{friction.momentum}% momentum</span>
-          </div>
+      {/* Hero ------------------------------------------------------------- */}
+      <section className="hero">
+        <HeroArt className="hero__art" />
+        <div className="hero__brand">
+          <Wordmark size={24} taglineText={t.shell.tagline} />
         </div>
-        {purpose?.destination && (
-          <div className="hero__dest">
-            <span className="hero__dest-label">Heading toward</span>
-            {purpose.destination}
+        <div className="hero__greet">{greeting} 👋</div>
+        <p className="hero__sub">{t.home.heroSub}</p>
+        <button className="hero__panel" onClick={onOpenJourney}>
+          <span className="ibadge ibadge--mint">
+            <Icon name="target" size={22} />
+          </span>
+          <div className="hero__panel-text">
+            <div className="hero__panel-label">{t.home.yourRoute}</div>
+            <div className="hero__panel-title">{journey.courseName}</div>
+            <div className="hero__panel-meter">
+              <span className="meter meter--onDark">
+                <span className="meter__fill" style={{ width: `${journey.progressPercent}%` }} />
+              </span>
+              <span className="hero__pct">{journey.progressPercent}% {t.home.ofRoute}</span>
+            </div>
           </div>
-        )}
-      </div>
+          <span className="effort__go">
+            <Icon name="chevron" size={18} />
+          </span>
+        </button>
+      </section>
 
+      {/* Welcome back / attention ----------------------------------------- */}
       {returning && (
         <button className="banner banner--welcome" onClick={() => onOpenRecovery()}>
-          <div className="banner__title">Welcome back.</div>
-          <div className="banner__body">
-            Your progress is still here. Let us find a way back in that fits your
-            week — no catching up required.
-          </div>
-          <span className="banner__cta">Recalculate my route →</span>
+          <div className="banner__title">{t.home.welcomeBack.title}</div>
+          <div className="banner__body">{t.home.welcomeBack.body}</div>
+          <span className="banner__cta">
+            {t.home.welcomeBack.cta} <Icon name="arrow" size={16} />
+          </span>
         </button>
       )}
-
       {needsAttention && !returning && (
         <button className="banner" onClick={() => onOpenRecovery()}>
           <div className="banner__title">{friction.headline}</div>
-          <div className="banner__body">
-            If something got in the way this week, tell FARO and the plan changes.
-          </div>
-          <span className="banner__cta">Life happened →</span>
+          <div className="banner__body">{t.home.attention.body}</div>
+          <span className="banner__cta">
+            {t.home.attention.cta} <Icon name="arrow" size={16} />
+          </span>
         </button>
       )}
 
+      {/* Next best action --------------------------------------------------- */}
       {nextAction && milestone ? (
         <div className="nba">
-          <div className="nba__eyebrow">Next best action</div>
+          <div className="nba__eyebrow">
+            <Icon name="flag" size={14} /> {t.home.nba.eyebrow}
+          </div>
           <div className="nba__title">{nextAction.title}</div>
           <div className="nba__meta">
-            About {nextAction.estimatedMinutes} minutes · you told us you have{' '}
-            {availableMinutes}.
+            {t.home.nba.meta(nextAction.estimatedMinutes, availableMinutes)}
             <br />
             {nextAction.reason}
           </div>
           <div className="nba__cta row">
-            <button
-              className="btn btn--beacon"
-              style={{ flex: 1 }}
-              onClick={() => completeMilestone(milestone)}
-            >
-              Start this step
+            <button className="btn" style={{ flex: 1 }} onClick={() => completeMilestone(milestone)}>
+              {t.home.nba.start} <Icon name="arrow" size={16} />
             </button>
             <button className="btn btn--ghost" onClick={onAskMentor}>
-              Ask FARO
+              {t.home.nba.ask}
             </button>
           </div>
         </div>
       ) : (
         <div className="card">
-          <div className="eyebrow">Next best action</div>
-          <p style={{ margin: '8px 0 0' }}>
-            Nothing is waiting for you right now. You have reached the end of the
-            route.
-          </p>
+          <div className="eyebrow">{t.home.nba.eyebrow}</div>
+          <p style={{ margin: '8px 0 0' }}>{t.home.nba.empty}</p>
         </div>
       )}
 
-      <div className="card">
-        <div className="row row--between">
-          <div>
-            <div className="eyebrow">This visit</div>
-            <p className="muted" style={{ margin: '6px 0 0' }}>
-              {sessions.length === 0
-                ? 'Nothing completed yet — one step is enough.'
-                : `${sessions.length} step${sessions.length === 1 ? '' : 's'} completed. That is how momentum comes back.`}
-            </p>
+      {/* Pillars ------------------------------------------------------------ */}
+      <div className="grid-2 grid-2--wide">
+        <PillarCard tone="mint" icon="target" title={t.pillars.focus.title} body={t.pillars.focus.body} onClick={onOpenPurpose} />
+        <PillarCard tone="orange" icon="trend" title={t.pillars.advance.title} body={t.pillars.advance.body} onClick={onOpenJourney} />
+        <PillarCard tone="violet" icon="gift" title={t.pillars.reward.title} body={t.pillars.reward.body} onClick={onOpenProgress} />
+        <PillarCard tone="forest" icon="user" title={t.pillars.own.title} body={t.pillars.own.body} onClick={onAskMentor} />
+      </div>
+
+      {/* My courses ---------------------------------------------------------- */}
+      <div className="section">
+        <div className="section__title">
+          <Icon name="book" size={22} /> {t.home.myCourses}
+        </div>
+        <button className="section__link" onClick={onOpenJourney}>
+          {t.home.visit.seeRoute} <Icon name="arrow" size={16} />
+        </button>
+      </div>
+      <CourseCard
+        category={snapshot.course.course_code}
+        title={journey.courseName}
+        progressLabel={t.home.courseProgress}
+        percent={journey.progressPercent}
+        onClick={onOpenJourney}
+      />
+
+      {/* Stats: achievements · momentum · rhythm · mentor ---------------------- */}
+      <div className="grid-2 grid-2--wide">
+        <StatCard
+          tone="violet"
+          icon="trophy"
+          eyebrow={t.home.achievementsCard.label}
+          value={t.home.achievementsCard.earned(earned)}
+          sub={t.home.achievementsCard.sub}
+          onClick={onOpenProgress}
+        />
+        <StatCard
+          tone="orange"
+          icon="wave"
+          eyebrow={t.home.momentumCard.label}
+          value={`${friction.momentum}%`}
+          sub={momentumWord}
+          onClick={() => onOpenRecovery()}
+        />
+        <StatCard
+          tone="mint"
+          icon="clock"
+          eyebrow={t.home.rhythmCard.label}
+          value={rhythmDays > 0 ? String(rhythmDays) : '—'}
+          sub={rhythmSub}
+          onClick={onOpenProgress}
+        />
+        <StatCard
+          tone="forest"
+          icon="lighthouse"
+          eyebrow={t.home.mentorCard.label}
+          value={t.home.mentorCard.title}
+          sub={t.home.mentorCard.sub}
+          onClick={onAskMentor}
+        />
+      </div>
+
+      {/* Effort banner -------------------------------------------------------- */}
+      <button className="effort" onClick={onOpenPurpose}>
+        <HeroArt className="effort__art" />
+        <div className="effort__text">
+          <div className="effort__title">{t.home.effort.title}</div>
+          <div className="effort__body">
+            {purpose?.destination ? t.home.effort.bodyWithDest(purpose.destination) : t.home.effort.body}
           </div>
         </div>
+        <span className="effort__go">
+          <Icon name="arrow" size={18} />
+        </span>
+      </button>
+
+      {/* This visit ------------------------------------------------------------ */}
+      <div className="card">
+        <div className="eyebrow">{t.home.visit.eyebrow}</div>
+        <p className="muted" style={{ margin: '6px 0 0' }}>
+          {sessions.length === 0 ? t.home.visit.none : t.home.visit.some(sessions.length)}
+        </p>
         <div className="row" style={{ marginTop: 'var(--space-4)' }}>
           <button className="btn btn--ghost" style={{ flex: 1 }} onClick={onOpenJourney}>
-            See the route
+            {t.home.visit.seeRoute}
           </button>
           <button className="btn btn--ghost" style={{ flex: 1 }} onClick={() => onOpenRecovery()}>
-            Life happened
+            {t.home.visit.lifeHappened}
           </button>
         </div>
       </div>

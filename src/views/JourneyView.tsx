@@ -5,36 +5,37 @@
  * the route that is still open - never as a red overdue count - and when the
  * route has drifted, FARO recalculates it instead of declaring Game Over.
  */
+import { Icon } from '@/components/Icon'
 import { useStore } from '@/state/store'
+import type { Dict } from '@/i18n'
 import type { JourneyMilestone } from '@/types'
 
-const fmtDue = (iso: string | null) => {
+const fmtDue = (iso: string | null, t: Dict) => {
   if (!iso) return null
-  const d = new Date(iso)
-  const days = Math.round((d.getTime() - Date.now()) / 86_400_000)
-  if (days === 0) return 'due today'
-  if (days > 0) return `due in ${days} day${days === 1 ? '' : 's'}`
-  return `was due ${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} ago`
+  const days = Math.round((new Date(iso).getTime() - Date.now()) / 86_400_000)
+  if (days === 0) return t.journey.due.today
+  if (days > 0) return t.journey.due.in(days)
+  return t.journey.due.ago(Math.abs(days))
 }
 
-function Stop({ m }: { m: JourneyMilestone }) {
-  const due = fmtDue(m.dueAt)
+function Stop({ m, t }: { m: JourneyMilestone; t: Dict }) {
+  const due = fmtDue(m.dueAt, t)
   const meta =
     m.status === 'completed'
-      ? 'Done'
+      ? t.journey.stop.done
       : m.status === 'locked'
-        ? 'Opens later'
-        : [`${m.estimatedMinutes} min`, due].filter(Boolean).join(' · ')
+        ? t.journey.stop.locked
+        : [`${m.estimatedMinutes} ${t.journey.stop.min}`, due].filter(Boolean).join(' · ')
 
   return (
     <li className={`stop stop--${m.status}${m.checkpoint ? ' stop--checkpoint' : ''}`}>
       <span className="stop__dot" />
       <div className="stop__title">
         {m.title}
-        {m.checkpoint && <span className="checkpoint-flag">checkpoint</span>}
+        {m.checkpoint && <span className="checkpoint-flag">{t.journey.stop.checkpoint}</span>}
       </div>
       <div className="stop__meta">
-        {m.status === 'current' ? `You are here · ${meta}` : meta}
+        {m.status === 'current' ? `${t.journey.stop.here} · ${meta}` : meta}
       </div>
     </li>
   )
@@ -42,6 +43,7 @@ function Stop({ m }: { m: JourneyMilestone }) {
 
 export function JourneyView({ onAskMentor }: { onAskMentor: () => void }) {
   const {
+    t,
     journey,
     friction,
     nextAction,
@@ -51,31 +53,29 @@ export function JourneyView({ onAskMentor }: { onAskMentor: () => void }) {
     completeMilestone,
   } = useStore()
 
-  if (!journey || !friction) return <p className="muted">Loading your route…</p>
+  if (!journey || !friction) return <p className="muted">{t.journey.loading}</p>
 
   const nextMilestone = nextAction
     ? journey.milestones.find((m) => m.id === nextAction.milestoneId)
     : undefined
 
-  const groups = journey.milestones.reduce<Record<string, JourneyMilestone[]>>(
-    (acc, m) => {
-      const key = m.subtitle ?? 'Course'
-      ;(acc[key] ??= []).push(m)
-      return acc
-    },
-    {},
-  )
+  const groups = journey.milestones.reduce<Record<string, JourneyMilestone[]>>((acc, m) => {
+    const key = m.subtitle ?? journey.courseName
+    ;(acc[key] ??= []).push(m)
+    return acc
+  }, {})
 
   return (
     <div className="stack">
       {journey.recalculated && (
         <div className="recalc">
-          <span aria-hidden="true">↻</span>
+          <span className="recalc__icon">
+            <Icon name="refresh" size={20} />
+          </span>
           <div>
-            <div className="recalc__title">Recalculating your route…</div>
+            <div className="recalc__title">{t.journey.recalc.title}</div>
             <div className="recalc__body">
-              {friction.headline} Nothing is lost - the route below is reordered
-              around where you actually are.
+              {friction.headline} {t.journey.recalc.body}
             </div>
           </div>
         </div>
@@ -83,15 +83,20 @@ export function JourneyView({ onAskMentor }: { onAskMentor: () => void }) {
 
       <div className="card stack">
         <div className="row row--between">
-          <div>
-            <div className="eyebrow">Your journey</div>
-            <div className="h2" style={{ margin: '4px 0 0' }}>{journey.courseName}</div>
+          <div className="row">
+            <span className="ibadge ibadge--tile">
+              <Icon name="route" size={22} />
+            </span>
+            <div>
+              <div className="eyebrow">{t.journey.eyebrow}</div>
+              <div className="h2" style={{ margin: '2px 0 0' }}>{journey.courseName}</div>
+            </div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 'var(--text-lg)', fontWeight: 650 }}>
+            <div style={{ fontSize: 'var(--text-xl)', fontWeight: 750, color: 'var(--forest-700)' }}>
               {journey.progressPercent}%
             </div>
-            <div className="muted" style={{ fontSize: 'var(--text-xs)' }}>of the route</div>
+            <div className="muted" style={{ fontSize: 'var(--text-xs)' }}>{t.home.ofRoute}</div>
           </div>
         </div>
         <div className="meter">
@@ -99,49 +104,49 @@ export function JourneyView({ onAskMentor }: { onAskMentor: () => void }) {
         </div>
         {purpose?.destination && (
           <p className="muted" style={{ margin: 0 }}>
-            Heading toward: {purpose.destination}
+            {t.journey.headingToward} {purpose.destination}
           </p>
         )}
       </div>
 
       {nextAction && (
         <div className="nba">
-          <div className="nba__eyebrow">Next best action</div>
+          <div className="nba__eyebrow">
+            <Icon name="flag" size={14} /> {t.home.nba.eyebrow}
+          </div>
           <div className="nba__title">{nextAction.title}</div>
           <div className="nba__meta">
-            About {nextAction.estimatedMinutes} minutes · you have {availableMinutes}.
+            {t.home.nba.meta(nextAction.estimatedMinutes, availableMinutes)}
             <br />
             {nextAction.reason}
           </div>
           <div className="nba__cta row">
             <button
-              className="btn btn--beacon"
+              className="btn"
               style={{ flex: 1 }}
               disabled={!nextMilestone}
               onClick={() => nextMilestone && completeMilestone(nextMilestone)}
             >
-              Start this step
+              {t.home.nba.start} <Icon name="arrow" size={16} />
             </button>
-            <button className="btn btn--ghost" onClick={onAskMentor}>Ask FARO</button>
+            <button className="btn btn--ghost" onClick={onAskMentor}>
+              {t.home.nba.ask}
+            </button>
           </div>
         </div>
       )}
 
       {journey.recalculated && recovery.length > 0 && (
         <div className="card">
-          <div className="eyebrow">Your way back</div>
-          <p className="muted" style={{ margin: '6px 0 12px' }}>
-            You do not need to catch everything up. Three small sessions.
-          </p>
+          <div className="eyebrow">{t.journey.wayBack.eyebrow}</div>
+          <p className="muted" style={{ margin: '6px 0 12px' }}>{t.journey.wayBack.body}</p>
           <ul className="route">
             {recovery.map((s) => (
               <li key={s.when}>
-                <div className="route__when">
-                  {s.when === 'next_session' ? 'Next session' : s.when}
-                </div>
+                <div className="route__when">{t.journey.when[s.when]}</div>
                 <div>
                   <div className="route__title">{s.title}</div>
-                  <div className="route__time">{s.estimatedMinutes} min</div>
+                  <div className="route__time">{s.estimatedMinutes} {t.journey.stop.min}</div>
                 </div>
               </li>
             ))}
@@ -150,14 +155,14 @@ export function JourneyView({ onAskMentor }: { onAskMentor: () => void }) {
       )}
 
       <div className="card">
-        <div className="eyebrow">The route</div>
+        <div className="eyebrow">{t.journey.theRoute}</div>
         <div style={{ marginTop: 'var(--space-3)' }}>
           {Object.entries(groups).map(([module, stops]) => (
             <div key={module}>
               <div className="module-head">{module}</div>
               <ul className="track">
                 {stops.map((m) => (
-                  <Stop key={m.id} m={m} />
+                  <Stop key={m.id} m={m} t={t} />
                 ))}
               </ul>
             </div>
