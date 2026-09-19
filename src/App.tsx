@@ -148,7 +148,11 @@ export default function App() {
             />
           )}
           {view === 'recovery' && (
-            <RecoveryView onAskMentor={() => setView('mentor')} onGoHome={() => setView('home')} />
+            <RecoveryView
+              onAskMentor={() => setView('mentor')}
+              onGoHome={() => setView('home')}
+              onOpenJourney={() => setView('journey')}
+            />
           )}
           {view === 'purpose' && <PurposeView />}
         </div>

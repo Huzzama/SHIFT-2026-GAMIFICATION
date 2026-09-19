@@ -171,6 +171,123 @@ export const en: Dict = {
     },
     wayBack: { eyebrow: 'Your way back', body: (m: number) => `Three small sessions, sized to the ${m} minutes you have. Not a backlog.` },
     note: 'FARO changes what it asks of you, never what your course requires. Deadlines, grades and extensions stay with your institution.',
+
+    plan: {
+      analyzing: 'Reviewing your progress…',
+      recalculating: 'Recalculating your route…',
+      welcome: {
+        title: 'Welcome back',
+        sub: 'Your progress is still here. FARO recalculated your route.',
+        away: (d: number) => `You've been away for ${d} ${d === 1 ? 'day' : 'days'}.`,
+      },
+      situation: {
+        eyebrow: 'Your current situation',
+        days: (d: number) => `${d} ${d === 1 ? 'day' : 'days'}`,
+        daysLabel: 'left in the period',
+        workLabel: 'of remaining work',
+        modules: (n: number) => `${n} ${n === 1 ? 'module' : 'modules'}`,
+        modulesLabel: 'still to finish',
+      },
+      feasibility: {
+        eyebrow: 'Feasibility',
+        comfortable: {
+          title: 'You can still finish',
+          body: (min: number) => `Your course still fits inside the evaluation period at about ${min} min a day.`,
+        },
+        tight: {
+          title: 'You can finish by raising the pace a little',
+          body: (min: number, cap: number) => `Finishing everything asks for about ${min} min a day, above the ${cap} min you usually sustain. Reachable, but tight.`,
+        },
+        not_realistic: {
+          title: 'Your original route is no longer realistic',
+          body: (min: number) => `Completing everything that is left would take about ${min} min a day until the deadline. FARO is not going to tell you that will happen on its own.`,
+        },
+        unknown: {
+          title: 'FARO needs more information',
+          body: 'There is no deadline or enough history yet to build a reliable recovery route. We are not going to invent the numbers.',
+        },
+        required: (m: number) => `${m} min/day needed`,
+        yours: (m: number) => `${m} min/day you sustain`,
+        alternatives: {
+          title: 'What can still be done',
+          mandatory: 'Prioritise mandatory activities only',
+          impact: 'Focus on what weighs most for completing the course',
+          mentor: 'Talk to FARO Mentor about your options',
+          realistic: 'Build a shorter, realistic plan',
+        },
+      },
+      whatHappened: {
+        eyebrow: 'What happened?',
+        body: 'Optional. It shapes the plan — it is not used to judge you.',
+      },
+      time: {
+        eyebrow: 'How much time do you have?',
+        body: 'FARO plans around this. Be honest before ambitious.',
+        perDay: (m: number) => `${m} min/day`,
+        hour: '1 hour/day',
+        varies: 'It changes every day',
+        flexible: {
+          title: 'Flexible route',
+          min: (m: number) => `Minimum goal: ${m} min`,
+          rec: (m: number) => `Recommended: ${m} min`,
+          extra: 'Extra time: optional',
+        },
+      },
+      strategies: {
+        eyebrow: 'Route options',
+        comfortable: 'Comfortable',
+        balanced: 'Balanced',
+        intensive: 'Intensive',
+        body: (days: number, buffer: number) =>
+          buffer > 0
+            ? `Finish in ${days} ${days === 1 ? 'day' : 'days'}, with ${buffer} to spare before the deadline.`
+            : `Finish right at the deadline, in ${days} ${days === 1 ? 'day' : 'days'}.`,
+        notFeasible: (days: number) => `Would need ${days} days: that does not fit before the deadline.`,
+        suggested: 'Suggested for you',
+        suggestedWhy: (m: number) => `It is the closest to the ${m} min/day you already sustain.`,
+      },
+      route: {
+        eyebrow: 'Your new route',
+        today: 'Today',
+        tomorrow: 'Tomorrow',
+        day: (n: number) => `Day ${n}`,
+        checkpoint: (name: string) => `Checkpoint · ${name}`,
+        showAll: (n: number) => `See all ${n} days`,
+        showLess: 'See less',
+        overflow: (n: number) =>
+          `${n} ${n === 1 ? 'activity falls' : 'activities fall'} outside the period at this pace. FARO does not hide them: raise your daily time or review them with the Mentor.`,
+        updated: {
+          title: 'Your route has been updated',
+          body: (m: number) => `Your plan now uses ${m}-minute sessions.`,
+        },
+      },
+      why: {
+        title: 'Why FARO changed your route',
+        days: (d: number) => `${d} days remaining until the deadline`,
+        rhythm: (m: number) => `Your previous rhythm: ~${m} min/day`,
+        pending: (n: number) => `${n} activities still pending`,
+        duration: 'Estimated duration of each activity',
+        deadlines: 'Course deadlines',
+        note: 'Deterministic, checkable against the numbers above. FARO does not guess them.',
+      },
+      oneThing: {
+        eyebrow: "Today's one thing",
+        meta: (m: number) => `${m} minutes`,
+        why: 'This is the most useful next step for your new route.',
+        longer: (m: number) => `It is longer than your ${m} min sessions. Start it and pause whenever you need — moving counts, finishing it today does not.`,
+        start: 'Start',
+        none: 'Nothing left to schedule. You have reached the end of the route.',
+      },
+      done: {
+        flag: 'Step complete',
+        title: "Nice. You're back on route.",
+        body: (title: string, momentum: number) =>
+          `“${title}” is done and your momentum is back to ${momentum}%. Home, Journey and Progress already reflect the new plan.`,
+        journey: 'Continue in Journey',
+        home: 'Back to home',
+      },
+      recalcBtn: 'Recalculate route',
+    },
     states: {
       less_time: 'I have less time',
       overwhelmed: "I'm overwhelmed",

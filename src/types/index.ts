@@ -206,6 +206,93 @@ export interface Achievement {
   hint: string
 }
 
+/* ---------------------------------------------------- recovery planner */
+
+/**
+ * How this student actually studies, as opposed to how a syllabus assumed.
+ *
+ * Mocked today. In production this is computed by the backend from Canvas
+ * activity plus FARO's own sessions - never asked for in a form.
+ */
+export interface StudyProfile {
+  /** Typical length of one real study session, in minutes. */
+  averageSessionMinutes: number
+  /** Days per week the student historically studied. */
+  daysPerWeek: number
+}
+
+/** The objective situation, measured - never editorialised. */
+export interface RemainingWork {
+  activities: number
+  minutes: number
+  modules: number
+  /** Calendar days until the course closes. */
+  daysLeft: number
+  deadline: string | null
+}
+
+export type FeasibilityState = 'comfortable' | 'tight' | 'not_realistic' | 'unknown'
+
+/**
+ * The honest answer to "can I still finish?".
+ *
+ * `not_realistic` exists on purpose. FARO does not promise an outcome it
+ * cannot support - trust is worth more than a motivating lie.
+ */
+export interface FeasibilityCheck {
+  state: FeasibilityState
+  /** Minutes per day needed to finish everything by the deadline. */
+  requiredDailyMinutes: number
+  /** What this student sustains: what they told us, or their measured rhythm. */
+  capacityMinutes: number
+  /** required ÷ capacity. 1.0 = exactly at their limit. */
+  load: number
+}
+
+export type StrategyId = 'comfortable' | 'balanced' | 'intensive'
+
+export interface RouteStrategy {
+  id: StrategyId
+  dailyMinutes: number
+  /** Days this pace needs. */
+  days: number
+  /** Slack days before the deadline. Negative means it does not fit. */
+  buffer: number
+  feasible: boolean
+  /** Marked only when there is an objective reason, never as "the best one". */
+  suggested: boolean
+}
+
+export interface PlanItem {
+  milestoneId: string
+  title: string
+  moduleName: string | null
+  minutes: number
+  checkpoint: boolean
+}
+
+export interface PlanDay {
+  index: number
+  dateISO: string
+  minutes: number
+  items: PlanItem[]
+  /** True when this day closes a module. */
+  checkpoint: boolean
+  checkpointLabel: string | null
+}
+
+export interface RecoveryPlan {
+  days: PlanDay[]
+  dailyMinutes: number
+  strategy: StrategyId
+  /** Work that does not fit before the deadline. Surfaced, never dropped silently. */
+  overflow: PlanItem[]
+  finishesInDays: number
+}
+
+/** What the student says they can give per day. `varies` is the honest one. */
+export type DailyTimeChoice = 15 | 30 | 45 | 60 | 'varies'
+
 export type MentorStyle =
   | 'direct'
   | 'encouraging'

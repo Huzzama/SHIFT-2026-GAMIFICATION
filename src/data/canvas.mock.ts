@@ -17,6 +17,7 @@ import type {
   CanvasAssignment,
   CanvasCourse,
   CanvasModule,
+  StudyProfile,
 } from '@/types'
 
 const DAY = 24 * 60 * 60 * 1000
@@ -24,12 +25,34 @@ const now = Date.now()
 const daysAgo = (d: number) => new Date(now - d * DAY).toISOString()
 const daysAhead = (d: number) => new Date(now + d * DAY).toISOString()
 
+/**
+ * Days until the evaluation period closes.
+ *
+ * This is the single number that makes Recovery's feasibility check mean
+ * something. With a whole semester left, "can I still finish?" is trivially
+ * yes and the question is not worth asking. Twelve days is the pressure the
+ * product is designed for: tight enough to be real, wide enough to recover.
+ */
+const DAYS_UNTIL_COURSE_ENDS = 12
+
 export const mockCourse: CanvasCourse = {
   id: 4021,
   name: 'Gestión de Proyectos',
   course_code: 'GP-101',
   start_at: daysAgo(35),
-  end_at: daysAhead(28),
+  end_at: daysAhead(DAYS_UNTIL_COURSE_ENDS),
+}
+
+/**
+ * The student's measured rhythm.
+ *
+ * Recovery plans around this rather than assuming everyone can give the same
+ * hour a day. Centralised here, per the prototype's mock-data rule - no
+ * component invents a number of its own.
+ */
+export const mockStudyProfile: StudyProfile = {
+  averageSessionMinutes: 35,
+  daysPerWeek: 4,
 }
 
 export const mockModules: CanvasModule[] = [
@@ -85,15 +108,15 @@ export const mockAssignments: CanvasAssignment[] = [
   make(3, 'Construir un cronograma de proyecto', -4, 45, false),
   make(3, 'Quiz del módulo 3', -1, 20, false),
 
-  make(4, 'Lectura: identificar riesgos', 3, 15, false),
-  make(4, 'Ejercicio: registro de riesgos', 6, 40, false),
-  make(4, 'Quiz del módulo 4', 8, 20, false),
+  make(4, 'Lectura: identificar riesgos', 2, 15, false),
+  make(4, 'Ejercicio: registro de riesgos', 4, 40, false),
+  make(4, 'Quiz del módulo 4', 5, 20, false),
 
-  make(5, 'Mapa de interesados', 14, 30, false),
-  make(5, 'Quiz del módulo 5', 16, 20, false),
+  make(5, 'Mapa de interesados', 7, 30, false),
+  make(5, 'Quiz del módulo 5', 8, 20, false),
 
-  make(6, 'Informe de cierre del proyecto', 24, 60, false),
-  make(6, 'Reflexión final', 27, 25, false),
+  make(6, 'Informe de cierre del proyecto', 11, 60, false),
+  make(6, 'Reflexión final', 12, 25, false),
 ]
 
 /** Activity stops 5 days ago: the disconnection FARO should catch. */

@@ -10,11 +10,13 @@ import type {
   CanvasCourse,
   CanvasModule,
 } from '@/types'
+import type { StudyProfile } from '@/types'
 import {
   mockActivity,
   mockAssignments,
   mockCourse,
   mockModules,
+  mockStudyProfile,
 } from './canvas.mock'
 
 export interface CourseSnapshot {
@@ -22,6 +24,12 @@ export interface CourseSnapshot {
   modules: CanvasModule[]
   assignments: CanvasAssignment[]
   activity: CanvasActivityEvent[]
+  /**
+   * How the student actually studies. Optional on purpose: a real backend may
+   * not have enough history yet, and Recovery must say so rather than invent
+   * a rhythm it cannot support.
+   */
+  profile?: StudyProfile
 }
 
 export interface FaroClient {
@@ -39,6 +47,7 @@ export class MockFaroClient implements FaroClient {
       modules: mockModules,
       assignments: mockAssignments,
       activity: mockActivity,
+      profile: mockStudyProfile,
     }
   }
 }

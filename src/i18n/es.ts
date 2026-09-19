@@ -185,6 +185,126 @@ export const es = {
     },
     wayBack: { eyebrow: 'Tu camino de vuelta', body: (m: number) => `Tres sesiones cortas, ajustadas a los ${m} minutos que tienes. No un pendiente.` },
     note: 'FARO cambia lo que te pide, nunca lo que tu curso requiere. Fechas, calificaciones y prórrogas siguen siendo de tu institución.',
+
+    /* El flujo de recuperación: detectar → tranquilizar → evaluar → recalcular
+       → personalizar → actuar. Nunca mostrar todo lo pendiente antes de
+       mostrar cómo se puede terminar. */
+    plan: {
+      analyzing: 'Revisando tu progreso…',
+      recalculating: 'Recalculando tu ruta…',
+      welcome: {
+        title: 'Bienvenido de vuelta',
+        sub: 'Tu progreso sigue aquí. FARO recalculó tu ruta.',
+        away: (d: number) => `Estuviste fuera ${d} ${d === 1 ? 'día' : 'días'}.`,
+      },
+      situation: {
+        eyebrow: 'Tu situación actual',
+        days: (d: number) => `${d} ${d === 1 ? 'día' : 'días'}`,
+        daysLabel: 'para el cierre',
+        workLabel: 'de trabajo restante',
+        modules: (n: number) => `${n} ${n === 1 ? 'módulo' : 'módulos'}`,
+        modulesLabel: 'por terminar',
+      },
+      feasibility: {
+        eyebrow: 'Viabilidad',
+        comfortable: {
+          title: 'Sí puedes terminar',
+          body: (min: number) => `Tu curso todavía cabe dentro del periodo de evaluación con unos ${min} min al día.`,
+        },
+        tight: {
+          title: 'Puedes terminar subiendo un poco el ritmo',
+          body: (min: number, cap: number) => `Terminar todo pide unos ${min} min al día, por encima de los ${cap} min que sueles sostener. Es alcanzable, pero apretado.`,
+        },
+        not_realistic: {
+          title: 'Tu ruta original ya no es realista',
+          body: (min: number) => `Completar todo lo que queda pediría unos ${min} min al día hasta el cierre. FARO no te va a decir que eso va a pasar solo.`,
+        },
+        unknown: {
+          title: 'FARO necesita más información',
+          body: 'Todavía no hay fecha de cierre ni historial suficiente para construir una ruta de recuperación confiable. No vamos a inventar los números.',
+        },
+        required: (m: number) => `${m} min/día necesarios`,
+        yours: (m: number) => `${m} min/día que sostienes`,
+        alternatives: {
+          title: 'Lo que sí se puede hacer',
+          mandatory: 'Priorizar solo las actividades obligatorias',
+          impact: 'Concentrarte en lo que más pesa para cerrar el curso',
+          mentor: 'Hablar con FARO Mentor sobre tus opciones',
+          realistic: 'Construir un plan más corto y realista',
+        },
+      },
+      whatHappened: {
+        eyebrow: '¿Qué pasó?',
+        body: 'Opcional. Sirve para ajustar el plan, no para juzgarte.',
+      },
+      time: {
+        eyebrow: '¿Cuánto tiempo tienes?',
+        body: 'FARO planea alrededor de esto. Sé honesto antes que ambicioso.',
+        perDay: (m: number) => `${m} min/día`,
+        hour: '1 hora/día',
+        varies: 'Cambia cada día',
+        flexible: {
+          title: 'Ruta flexible',
+          min: (m: number) => `Meta mínima: ${m} min`,
+          rec: (m: number) => `Recomendado: ${m} min`,
+          extra: 'Tiempo extra: opcional',
+        },
+      },
+      strategies: {
+        eyebrow: 'Opciones de ruta',
+        comfortable: 'Cómoda',
+        balanced: 'Equilibrada',
+        intensive: 'Intensiva',
+        body: (days: number, buffer: number) =>
+          buffer > 0
+            ? `Terminas en ${days} ${days === 1 ? 'día' : 'días'}, con ${buffer} de margen antes del cierre.`
+            : `Terminas justo en el cierre, en ${days} ${days === 1 ? 'día' : 'días'}.`,
+        notFeasible: (days: number) => `Necesitaría ${days} días: no alcanza antes del cierre.`,
+        suggested: 'Sugerida para ti',
+        suggestedWhy: (m: number) => `Es la más cercana a los ${m} min/día que ya sostienes.`,
+      },
+      route: {
+        eyebrow: 'Tu nueva ruta',
+        today: 'Hoy',
+        tomorrow: 'Mañana',
+        day: (n: number) => `Día ${n}`,
+        checkpoint: (name: string) => `Punto de control · ${name}`,
+        showAll: (n: number) => `Ver los ${n} días completos`,
+        showLess: 'Ver menos',
+        overflow: (n: number) =>
+          `${n} ${n === 1 ? 'actividad queda' : 'actividades quedan'} fuera del periodo a este ritmo. FARO no las esconde: sube el tiempo diario o revísalas con el Mentor.`,
+        updated: {
+          title: 'Tu ruta se actualizó',
+          body: (m: number) => `Tu plan ahora usa sesiones de ${m} minutos.`,
+        },
+      },
+      why: {
+        title: '¿Por qué FARO cambió tu ruta?',
+        days: (d: number) => `${d} días restantes hasta el cierre`,
+        rhythm: (m: number) => `Tu ritmo previo: ~${m} min/día`,
+        pending: (n: number) => `${n} actividades todavía pendientes`,
+        duration: 'Duración estimada de cada actividad',
+        deadlines: 'Fechas límite del curso',
+        note: 'Cálculo determinista, verificable con los datos de arriba. FARO no adivina estos números.',
+      },
+      oneThing: {
+        eyebrow: 'Lo único de hoy',
+        meta: (m: number) => `${m} minutos`,
+        why: 'Es el paso más útil para tu nueva ruta.',
+        longer: (m: number) => `Es más largo que tus sesiones de ${m} min. Empiézalo y pausa cuando lo necesites — avanzar cuenta, terminarlo hoy no es obligatorio.`,
+        start: 'Empezar',
+        none: 'No queda nada por programar. Llegaste al final de la ruta.',
+      },
+      done: {
+        flag: 'Paso completado',
+        title: 'Listo. Vuelves a estar en ruta.',
+        body: (title: string, momentum: number) =>
+          `“${title}” está hecho y tu impulso volvió a ${momentum}%. Inicio, Ruta y Progreso ya reflejan el plan nuevo.`,
+        journey: 'Continuar en la Ruta',
+        home: 'Volver al inicio',
+      },
+      recalcBtn: 'Recalcular ruta',
+    },
     states: {
       less_time: 'Tengo menos tiempo',
       overwhelmed: 'Estoy abrumado',
