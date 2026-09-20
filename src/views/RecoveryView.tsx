@@ -53,10 +53,12 @@ export function RecoveryView({
   onAskMentor,
   onGoHome,
   onOpenJourney,
+  onOpenCommunity,
 }: {
   onAskMentor: () => void
   onGoHome: () => void
   onOpenJourney: () => void
+  onOpenCommunity: () => void
 }) {
   const {
     t,
@@ -489,6 +491,21 @@ export function RecoveryView({
                 onClick={onGoHome}
               >
                 {copy.done.home}
+              </button>
+            </section>
+          ) : null}
+
+          {/* Social recovery. Coming back to the course and coming back to the
+              people are two different returns, and the second one is the one
+              nobody offers. */}
+          {finished ? (
+            <section className="card">
+              <div className="eyebrow">{t.community.recoveryCta.title}</div>
+              <p className="muted" style={{ margin: '6px 0 12px', lineHeight: 1.55 }}>
+                {t.community.recoveryCta.body}
+              </p>
+              <button className="btn btn--ghost btn--block" onClick={onOpenCommunity}>
+                {t.community.recoveryCta.cta} <Icon name="arrow" size={16} />
               </button>
             </section>
           ) : oneThing && !oneThingDone ? (

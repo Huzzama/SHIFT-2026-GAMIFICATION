@@ -59,6 +59,12 @@ export function RewardsView() {
               <span className="sessions__time">+{points.fromComebacks}</span>
             </li>
           )}
+          {points.fromCommunity > 0 && (
+            <li>
+              <span className="sessions__title">{t.rewards.breakdown.community}</span>
+              <span className="sessions__time">+{points.fromCommunity}</span>
+            </li>
+          )}
         </ul>
       </div>
 

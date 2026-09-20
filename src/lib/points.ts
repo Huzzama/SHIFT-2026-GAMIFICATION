@@ -45,6 +45,8 @@ export interface PointsBreakdown {
   fromRhythm: number
   comebackEarned: boolean
   fromComebacks: number
+  /** Earned in Community: useful answers and completed study rooms. */
+  fromCommunity: number
 }
 
 function modulesCompleted(journey: Journey | null): number {
@@ -63,6 +65,7 @@ export function computePoints({
   journey,
   rhythmDays,
   awayGap,
+  community = 0,
 }: {
   sessions: StudySession[]
   journey: Journey | null
@@ -70,6 +73,12 @@ export function computePoints({
   rhythmDays: number
   /** Days away when this visit started - the same value the friction engine uses. */
   awayGap: number
+  /**
+   * Points already earned in Community, from `lib/community.ts`. Passed in
+   * rather than computed here so the two systems stay independent: points is
+   * the only place they meet.
+   */
+  community?: number
 }): PointsBreakdown {
   const activityCount = sessions.length
   const fromActivities = activityCount * pointsConfig.POINTS_PER_ACTIVITY
@@ -86,7 +95,7 @@ export function computePoints({
   const fromComebacks = comebackEarned ? pointsConfig.COMEBACK_BONUS : 0
 
   return {
-    total: fromActivities + fromModules + fromRhythm + fromComebacks,
+    total: fromActivities + fromModules + fromRhythm + fromComebacks + community,
     activityCount,
     fromActivities,
     moduleCount,
@@ -95,5 +104,6 @@ export function computePoints({
     fromRhythm,
     comebackEarned,
     fromComebacks,
+    fromCommunity: community,
   }
 }

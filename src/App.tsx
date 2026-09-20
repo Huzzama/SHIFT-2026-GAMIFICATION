@@ -6,6 +6,7 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { Wordmark } from '@/components/Wordmark'
 import { DashboardView } from '@/views/DashboardView'
 import { JourneyView } from '@/views/JourneyView'
+import { CommunityView } from '@/views/CommunityView'
 import { MentorView } from '@/views/MentorView'
 import { ProgressView } from '@/views/ProgressView'
 import { PurposeView } from '@/views/PurposeView'
@@ -15,24 +16,27 @@ import { useStore } from '@/state/store'
 import type { LifeState } from '@/types'
 
 /**
- * Five places, and that is the whole product.
+ * Six places, and that is the whole product.
  *
  * Recovery and Purpose are deliberately not tabs. Recovery appears when the
  * journey needs it, reached from Home; Purpose is set once and revisited
  * rarely. Keeping them out of the bar is what stops FARO from becoming another
  * app with sections to manage. Rewards joins the bar because it holds a
- * balance the student will want to check on its own, the way Progress does.
+ * balance the student will want to check on its own, the way Progress does,
+ * and Community because isolation is its own kind of friction - a student who
+ * feels alone will not find their way out of it through a contextual card.
  *
  * One layout, two shapes: bottom tabs in the ~400px side panel, the dark-teal
  * sidebar from the brand sheet when the page is wide (dev server, projector).
  */
-type Tab = 'home' | 'journey' | 'mentor' | 'rewards' | 'progress'
+type Tab = 'home' | 'journey' | 'mentor' | 'community' | 'rewards' | 'progress'
 type View = Tab | 'recovery' | 'purpose'
 
 const TABS: { id: Tab; icon: IconName }[] = [
   { id: 'home', icon: 'home' },
   { id: 'journey', icon: 'route' },
   { id: 'mentor', icon: 'lighthouse' },
+  { id: 'community', icon: 'user' },
   { id: 'rewards', icon: 'gift' },
   { id: 'progress', icon: 'chart' },
 ]
@@ -136,9 +140,18 @@ export default function App() {
               onOpenJourney={() => setView('journey')}
               onOpenProgress={() => setView('progress')}
               onOpenPurpose={() => setView('purpose')}
+              onOpenCommunity={() => setView('community')}
             />
           )}
-          {view === 'journey' && <JourneyView onAskMentor={() => setView('mentor')} />}
+          {view === 'journey' && (
+            <JourneyView onAskMentor={() => setView('mentor')} onOpenCommunity={() => setView('community')} />
+          )}
+          {view === 'community' && (
+            <CommunityView
+              onAskMentor={() => setView('mentor')}
+              onOpenRecovery={() => setView('recovery')}
+            />
+          )}
           {view === 'mentor' && <MentorView />}
           {view === 'rewards' && <RewardsView />}
           {view === 'progress' && (
@@ -152,6 +165,7 @@ export default function App() {
               onAskMentor={() => setView('mentor')}
               onGoHome={() => setView('home')}
               onOpenJourney={() => setView('journey')}
+              onOpenCommunity={() => setView('community')}
             />
           )}
           {view === 'purpose' && <PurposeView />}

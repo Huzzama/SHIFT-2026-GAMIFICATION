@@ -32,6 +32,7 @@ import { minutesFor } from '@/lib/lifeHappened'
 import { computePoints, type PointsBreakdown } from '@/lib/points'
 import { learningRhythm } from '@/lib/rhythm'
 import { applySessions } from '@/lib/sessions'
+import { useCommunityPoints } from './community'
 import { readValue, writeValue, clearAll } from './storage'
 import type {
   Achievement,
@@ -219,10 +220,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   /** Consecutive active days, ending today - Learning Rhythm, see `lib/rhythm.ts`. */
   const rhythmDays = useMemo(() => learningRhythm(sessions), [sessions])
 
-  /** FARO Points: config-driven, earned from the same real actions above. */
+  /**
+   * FARO Points: config-driven, earned from the same real actions above -
+   * plus whatever the student earned by helping someone in Community. One
+   * balance, two sources.
+   */
+  const communityPoints = useCommunityPoints()
   const points = useMemo(
-    () => computePoints({ sessions, journey, rhythmDays, awayGap }),
-    [sessions, journey, rhythmDays, awayGap],
+    () => computePoints({ sessions, journey, rhythmDays, awayGap, community: communityPoints }),
+    [sessions, journey, rhythmDays, awayGap, communityPoints],
   )
 
   /**

@@ -293,6 +293,130 @@ export interface RecoveryPlan {
 /** What the student says they can give per day. `varies` is the honest one. */
 export type DailyTimeChoice = 15 | 30 | 45 | 60 | 'varies'
 
+/* ------------------------------------------------------------- community */
+
+/**
+ * Community is a digital campus, not a social network.
+ *
+ * Two absences in these types are deliberate and load-bearing: there is no
+ * follower count and no rank. Nothing here can be used to say who is ahead.
+ */
+
+export type PostKind =
+  | 'achievement'
+  | 'activity'
+  | 'question'
+  | 'tip'
+  | 'learning'
+  | 'resource'
+  | 'help'
+  | 'recognition'
+  | 'milestone'
+
+/**
+ * Learning-oriented reactions. The vocabulary is the culture: every one of
+ * these says "I saw your progress", "this helped me" or "I'm with you" -
+ * none of them says "you are popular".
+ */
+export type ReactionKind = 'like' | 'applause' | 'useful' | 'motivating' | 'support'
+
+export type Reactions = Record<ReactionKind, number>
+
+/** Where an answer comes from. A peer answer is never dressed up as official. */
+export type AnswerSource = 'peer' | 'instructor' | 'mentor'
+
+export interface CommunityAuthor {
+  id: string
+  name: string
+  initials: string
+  /** Avatar tint only. Not a status, not a level. */
+  tone: 'forest' | 'mint' | 'violet' | 'orange' | 'teal'
+}
+
+export interface CommunityComment {
+  id: string
+  authorId: string
+  text: string
+  at: string
+  source: AnswerSource
+  /** How many peers marked this answer useful. Never a ranking. */
+  helpful: number
+}
+
+export interface CommunityPost {
+  id: string
+  kind: PostKind
+  authorId: string
+  text: string
+  /** Optional heading for questions, tips and resources. */
+  title?: string
+  courseName?: string
+  moduleName?: string
+  at: string
+  reactions: Reactions
+  comments: CommunityComment[]
+  /** For `resource` posts: what the link actually is. */
+  resourceLabel?: string
+}
+
+export interface StudyRoom {
+  id: string
+  name: string
+  courseName: string
+  participants: number
+  /** Total session length in minutes. */
+  minutes: number
+  mode: 'quiet' | 'pomodoro'
+  focusMinutes: number
+  breakMinutes: number
+}
+
+/** Cooperative, never competitive: one target the whole course moves toward. */
+export interface CommunityMission {
+  id: string
+  target: number
+  progress: number
+  contributors: number
+  endsInDays: number
+}
+
+/**
+ * Aggregate presence only.
+ *
+ * Every field here is a count of people, never a named individual doing a
+ * specific thing. "23 students are studying right now" is presence;
+ * "Andrea has been studying 37 minutes" is surveillance.
+ */
+export interface CoursePresence {
+  courseName: string
+  students: number
+  studyingNow: number
+  inRooms: number
+  /** Students who finished the current module this week. Social proof, not a rank. */
+  completedThisWeek: number
+  activitiesThisWeek: number
+  /** Collective days in a row the course has been active. Never per-student. */
+  rhythmDays: number
+}
+
+export type CommunityAchievementId =
+  | 'community_builder'
+  | 'knowledge_sharer'
+  | 'helpful_peer'
+  | 'study_companion'
+  | 'community_comeback'
+
+export interface CommunityAchievement {
+  id: CommunityAchievementId
+  title: string
+  description: string
+  hint: string
+  earned: boolean
+}
+
+/** The three kinds of stuck, and the FARO system each one belongs to. */
+export type SosNeed = 'topic' | 'time' | 'people'
+
 export type MentorStyle =
   | 'direct'
   | 'encouraging'

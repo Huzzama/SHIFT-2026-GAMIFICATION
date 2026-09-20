@@ -6,6 +6,7 @@
  * route has drifted, FARO recalculates it instead of declaring Game Over.
  */
 import { Icon } from '@/components/Icon'
+import { mockPresence } from '@/data/community.mock'
 import { useStore } from '@/state/store'
 import type { Dict } from '@/i18n'
 import type { JourneyMilestone } from '@/types'
@@ -41,7 +42,13 @@ function Stop({ m, t }: { m: JourneyMilestone; t: Dict }) {
   )
 }
 
-export function JourneyView({ onAskMentor }: { onAskMentor: () => void }) {
+export function JourneyView({
+  onAskMentor,
+  onOpenCommunity,
+}: {
+  onAskMentor: () => void
+  onOpenCommunity: () => void
+}) {
   const {
     t,
     journey,
@@ -153,6 +160,14 @@ export function JourneyView({ onAskMentor }: { onAskMentor: () => void }) {
           </ul>
         </div>
       )}
+
+      {/* One line, and deliberately one line. Journey is not a social feed;
+          this only says the road is not empty. */}
+      <button className="cm-signal" onClick={onOpenCommunity}>
+        <span className="cm-signal__dot" aria-hidden="true" />
+        {t.community.journeySignal(mockPresence.completedThisWeek)}
+        <Icon name="arrow" size={14} />
+      </button>
 
       <div className="card">
         <div className="eyebrow">{t.journey.theRoute}</div>

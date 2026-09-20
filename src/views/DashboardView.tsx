@@ -11,6 +11,7 @@ import { CourseCard, PillarCard, StatCard } from '@/components/Cards'
 import { HeroArt } from '@/components/HeroArt'
 import { Icon } from '@/components/Icon'
 import { Wordmark } from '@/components/Wordmark'
+import { mockPresence } from '@/data/community.mock'
 import { useStore } from '@/state/store'
 import type { LifeState } from '@/types'
 
@@ -22,12 +23,14 @@ export function DashboardView({
   onOpenJourney,
   onOpenProgress,
   onOpenPurpose,
+  onOpenCommunity,
 }: {
   onAskMentor: () => void
   onOpenRecovery: (state?: LifeState) => void
   onOpenJourney: () => void
   onOpenProgress: () => void
   onOpenPurpose: () => void
+  onOpenCommunity: () => void
 }) {
   const {
     t,
@@ -156,6 +159,22 @@ export function DashboardView({
           <div className="eyebrow">{t.home.nba.eyebrow}</div>
           <p style={{ margin: '8px 0 0' }}>{t.home.nba.empty}</p>
         </div>
+      )}
+
+      {/* Community — contextual, and only when there is someone to find ------ */}
+      {mockPresence.studyingNow > 0 && (
+        <button className="cm-homecard" onClick={onOpenCommunity}>
+          <span className="cm-homecard__dot" aria-hidden="true" />
+          <span className="cm-homecard__text">
+            <span className="cm-homecard__label">{t.community.homeCard.label}</span>
+            <span className="cm-homecard__body">
+              {t.community.homeCard.studying(mockPresence.studyingNow, journey.courseName)}
+            </span>
+          </span>
+          <span className="cm-homecard__cta">
+            {t.community.homeCard.cta} <Icon name="arrow" size={16} />
+          </span>
+        </button>
       )}
 
       {/* Pillars ------------------------------------------------------------ */}
