@@ -158,6 +158,35 @@ const RECOGNITION_ORDER: CommunityAchievementId[] = [
  * Five, like the resilience achievements - and earned the same way: by having
  * actually helped someone, not by being liked.
  */
+/**
+ * The inputs `evaluateCommunityAchievements` needs, built from live state.
+ *
+ * Pulled out so `CommunityView` and `ProfileView` compute recognitions the
+ * same way instead of each re-deriving it. `awayGap` comes from the main
+ * store, not from here - this file still never imports it, the caller does.
+ */
+export function communityRecognitionState(
+  community: {
+    answers: Record<string, unknown>
+    helpfulMarksReceived: number
+    posts: unknown[]
+    completedRoomSessions: number
+  },
+  awayGap: number,
+) {
+  return {
+    answersGiven: Object.keys(community.answers).length,
+    helpfulMarksReceived: community.helpfulMarksReceived,
+    postsShared: community.posts.length,
+    completedRoomSessions: community.completedRoomSessions,
+    cameBackAndParticipated:
+      awayGap >= 3 &&
+      (community.completedRoomSessions > 0 ||
+        community.posts.length > 0 ||
+        Object.keys(community.answers).length > 0),
+  }
+}
+
 export function evaluateCommunityAchievements(
   state: {
     answersGiven: number

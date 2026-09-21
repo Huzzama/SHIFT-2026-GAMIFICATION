@@ -253,6 +253,7 @@ a { color: inherit; }
 .tint--orange { background: var(--orange-100); }
 .tint--mint { background: var(--mint-100); }
 .tint--forest { background: var(--forest-100); }
+.tint--teal { background: var(--teal-100); }
 
 /* Language / theme toggle */
 .langs { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; padding: 2px; background: var(--surface); }

@@ -8,6 +8,7 @@ import { DashboardView } from '@/views/DashboardView'
 import { JourneyView } from '@/views/JourneyView'
 import { CommunityView } from '@/views/CommunityView'
 import { MentorView } from '@/views/MentorView'
+import { ProfileView } from '@/views/ProfileView'
 import { ProgressView } from '@/views/ProgressView'
 import { PurposeView } from '@/views/PurposeView'
 import { RecoveryView } from '@/views/RecoveryView'
@@ -30,7 +31,7 @@ import type { LifeState } from '@/types'
  * sidebar from the brand sheet when the page is wide (dev server, projector).
  */
 type Tab = 'home' | 'journey' | 'mentor' | 'community' | 'rewards' | 'progress'
-type View = Tab | 'recovery' | 'purpose'
+type View = Tab | 'recovery' | 'purpose' | 'profile'
 
 const TABS: { id: Tab; icon: IconName }[] = [
   { id: 'home', icon: 'home' },
@@ -44,10 +45,16 @@ const TABS: { id: Tab; icon: IconName }[] = [
 export default function App() {
   const { loading, purpose, friction, setLifeState, t } = useStore()
   const [view, setView] = useState<View>('home')
+  const [profileAuthorId, setProfileAuthorId] = useState('me')
 
   const openRecovery = (state?: LifeState) => {
     if (state) setLifeState(state)
     setView('recovery')
+  }
+
+  const openProfile = (authorId: string) => {
+    setProfileAuthorId(authorId)
+    setView('profile')
   }
 
   if (loading) {
@@ -81,7 +88,7 @@ export default function App() {
     )
   }
 
-  const tab: Tab | null = view === 'recovery' || view === 'purpose' ? null : view
+  const tab: Tab | null = view === 'recovery' || view === 'purpose' || view === 'profile' ? null : view
 
   return (
     <div className="shell">
@@ -125,10 +132,17 @@ export default function App() {
           </div>
         </header>
 
-        {(view === 'recovery' || view === 'purpose') && (
-          <button className="backbar" onClick={() => setView('home')}>
+        {(view === 'recovery' || view === 'purpose' || view === 'profile') && (
+          <button
+            className="backbar"
+            onClick={() => setView(view === 'profile' ? 'community' : 'home')}
+          >
             <Icon name="arrow" size={16} className="flip" />
-            {view === 'recovery' ? t.shell.back.recovery : t.shell.back.purpose}
+            {view === 'recovery'
+              ? t.shell.back.recovery
+              : view === 'purpose'
+                ? t.shell.back.purpose
+                : t.shell.back.profile}
           </button>
         )}
 
@@ -150,6 +164,7 @@ export default function App() {
             <CommunityView
               onAskMentor={() => setView('mentor')}
               onOpenRecovery={() => setView('recovery')}
+              onOpenProfile={openProfile}
             />
           )}
           {view === 'mentor' && <MentorView />}
@@ -158,7 +173,11 @@ export default function App() {
             <ProgressView
               onOpenJourney={() => setView('journey')}
               onEditPurpose={() => setView('purpose')}
+              onOpenProfile={() => openProfile('me')}
             />
+          )}
+          {view === 'profile' && (
+            <ProfileView authorId={profileAuthorId} onBack={() => setView('community')} />
           )}
           {view === 'recovery' && (
             <RecoveryView

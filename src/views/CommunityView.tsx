@@ -16,6 +16,7 @@
  */
 import { useMemo, useState } from 'react'
 import {
+  AuthorRow,
   CourseSignals,
   EmptyState,
   MissionCard,
@@ -34,6 +35,7 @@ import {
   roomDurations,
 } from '@/data/community.mock'
 import {
+  communityRecognitionState,
   evaluateCommunityAchievements,
   missionComplete,
   missionPercent,
@@ -52,11 +54,13 @@ const COMPOSER_KINDS: PostKind[] = ['question', 'help', 'learning', 'tip']
 export function CommunityView({
   onAskMentor,
   onOpenRecovery,
+  onOpenProfile,
 }: {
   onAskMentor: () => void
   onOpenRecovery: () => void
+  onOpenProfile: (authorId: string) => void
 }) {
-  const { t, journey, awayGap } = useStore()
+  const { t, journey, awayGap, profile } = useStore()
   const community = useCommunity()
 
   const [sosOpen, setSosOpen] = useState(false)
@@ -91,25 +95,33 @@ export function CommunityView({
   }, [feed, filter])
 
   const recognitions = useMemo(
-    () =>
-      evaluateCommunityAchievements(
-        {
-          answersGiven: Object.keys(community.answers).length,
-          helpfulMarksReceived: community.helpfulMarksReceived,
-          postsShared: community.posts.length,
-          completedRoomSessions: community.completedRoomSessions,
-          cameBackAndParticipated:
-            awayGap >= 3 &&
-            (community.completedRoomSessions > 0 ||
-              community.posts.length > 0 ||
-              Object.keys(community.answers).length > 0),
-        },
-        c.achievements,
-      ),
+    () => evaluateCommunityAchievements(communityRecognitionState(community, awayGap), c.achievements),
     [community, awayGap, c.achievements],
   )
 
   const earned = recognitions.filter((r) => r.earned).length
+
+  /**
+   * The 'me' entry in the mock author list is a placeholder. Here it is
+   * filled in with the student's own live profile and earned recognitions,
+   * so their photo/bio/badges show up the same way in their own posts and
+   * answers as they do on their profile - never a second, stale copy.
+   */
+  const authors = useMemo(
+    () =>
+      mockAuthors.map((a) =>
+        a.id === 'me'
+          ? {
+              ...a,
+              name: profile.name.trim() || a.name,
+              bio: profile.bio.trim() || undefined,
+              photoDataUrl: profile.photoDataUrl,
+              badges: recognitions.filter((r) => r.earned).map((r) => r.id),
+            }
+          : a,
+      ),
+    [profile, recognitions],
+  )
   const percent = missionPercent(mockMission, community.missionContributions)
   const complete = missionComplete(mockMission, community.missionContributions)
 
@@ -146,6 +158,15 @@ export function CommunityView({
   return (
     <div className="stack">
       <PresenceStrip presence={mockPresence} t={t} onOpenRooms={() => setFilter('all')} />
+
+      <button className="cm-myprofile" onClick={() => onOpenProfile('me')}>
+        <AuthorRow author={authors.find((a) => a.id === 'me') ?? authors[0]} size={40} />
+        <span className="cm-myprofile__text">
+          <span className="cm-myprofile__label">{c.myProfile.eyebrow}</span>
+          <span className="cm-myprofile__body">{c.myProfile.body}</span>
+        </span>
+        <Icon name="arrow" size={16} />
+      </button>
 
       {sosOpen ? (
         <SOSPanel t={t} onChoose={chooseSos} onCancel={() => setSosOpen(false)} />
@@ -298,7 +319,7 @@ export function CommunityView({
               <FeedPost
                 key={post.id}
                 post={post}
-                authors={mockAuthors}
+                authors={authors}
                 totals={totalsWithMine(post.reactions, community.reactions[post.id] ?? [])}
                 mine={community.reactions[post.id] ?? []}
                 myAnswer={community.answers[post.id]}
@@ -312,6 +333,7 @@ export function CommunityView({
                   setTimeout(() => community.recordHelpfulMarks(post.id, 6), 2500)
                 }}
                 onMarkHelpful={(id) => community.markHelpful(id)}
+                onOpenProfile={onOpenProfile}
               />
             ))}
           </div>

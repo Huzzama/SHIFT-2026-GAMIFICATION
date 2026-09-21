@@ -11,7 +11,7 @@
  *    bolt on after people have been hurt.
  */
 import { useState } from 'react'
-import { Avatar } from './CommunityBits'
+import { AuthorRow } from './CommunityBits'
 import { Icon } from './Icon'
 import type { Dict } from '@/i18n'
 import { reactionEmoji, reactionsFor } from '@/lib/community'
@@ -39,6 +39,7 @@ export function FeedPost({
   onReact,
   onAnswer,
   onMarkHelpful,
+  onOpenProfile,
 }: {
   post: CommunityPost
   authors: CommunityAuthor[]
@@ -50,6 +51,7 @@ export function FeedPost({
   onReact: (kind: ReactionKind) => void
   onAnswer: (text: string) => void
   onMarkHelpful: (commentId: string) => void
+  onOpenProfile: (authorId: string) => void
 }) {
   const c = t.community.feed
   const [open, setOpen] = useState(false)
@@ -66,16 +68,12 @@ export function FeedPost({
   return (
     <article className={`cm-post cm-post--${post.kind}`}>
       <header className="cm-post__head">
-        <Avatar author={author} />
-        <div className="cm-post__who">
-          <div className="cm-post__name">
-            {author.name}
-            <span className={`cm-tag cm-tag--${post.kind}`}>{c.kinds[post.kind]}</span>
-          </div>
-          <div className="cm-post__meta">
-            {timeAgo(post.at, t)}
-            {post.moduleName && ` · ${post.moduleName}`}
-          </div>
+        <AuthorRow author={author} onOpen={onOpenProfile}>
+          <span className={`cm-tag cm-tag--${post.kind}`}>{c.kinds[post.kind]}</span>
+        </AuthorRow>
+        <div className="cm-post__meta">
+          {timeAgo(post.at, t)}
+          {post.moduleName && ` · ${post.moduleName}`}
         </div>
       </header>
 
@@ -117,11 +115,11 @@ export function FeedPost({
             return (
               <div key={cm.id} className="cm-answer">
                 <div className="cm-answer__head">
-                  <Avatar author={a} size={24} />
-                  <span className="cm-answer__name">{a.name}</span>
-                  <span className={`cm-source cm-source--${cm.source}`}>
-                    {sourceLabel(cm.source)}
-                  </span>
+                  <AuthorRow author={a} size={24} onOpen={onOpenProfile}>
+                    <span className={`cm-source cm-source--${cm.source}`}>
+                      {sourceLabel(cm.source)}
+                    </span>
+                  </AuthorRow>
                 </div>
                 <p className="cm-answer__text">{cm.text}</p>
                 <div className="cm-answer__foot">
@@ -142,9 +140,16 @@ export function FeedPost({
           {myAnswer && (
             <div className="cm-answer cm-answer--mine">
               <div className="cm-answer__head">
-                <Avatar author={authors.find((a) => a.id === 'me') ?? authors[0]} size={24} />
-                <span className="cm-answer__name">{c.yourAnswer}</span>
-                <span className="cm-source cm-source--peer">{c.peerAnswer}</span>
+                <AuthorRow
+                  author={{
+                    ...(authors.find((a) => a.id === 'me') ?? authors[0]),
+                    name: c.yourAnswer,
+                  }}
+                  size={24}
+                  onOpen={onOpenProfile}
+                >
+                  <span className="cm-source cm-source--peer">{c.peerAnswer}</span>
+                </AuthorRow>
               </div>
               <p className="cm-answer__text">{myAnswer.text}</p>
               {myAnswer.helpful > 0 && (

@@ -10,9 +10,11 @@
  * nowhere else, so an earned achievement is recognisable at a glance.
  */
 import { Icon } from '@/components/Icon'
-import { useStore } from '@/state/store'
+import { communityRecognitionState, evaluateCommunityAchievements } from '@/lib/community'
 import { totalMinutes } from '@/lib/sessions'
-import type { Achievement, JourneyMilestone } from '@/types'
+import { useCommunity } from '@/state/community'
+import { useStore } from '@/state/store'
+import type { Achievement, CommunityAchievement, JourneyMilestone } from '@/types'
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
@@ -23,7 +25,7 @@ function Stat({ value, label }: { value: string; label: string }) {
   )
 }
 
-function Badge({ a }: { a: Achievement }) {
+function Badge({ a }: { a: Achievement | CommunityAchievement }) {
   return (
     <li className={`badge${a.earned ? ' badge--earned' : ''}`}>
       <span className="badge__mark" aria-hidden="true">
@@ -40,11 +42,20 @@ function Badge({ a }: { a: Achievement }) {
 export function ProgressView({
   onOpenJourney,
   onEditPurpose,
+  onOpenProfile,
 }: {
   onOpenJourney: () => void
   onEditPurpose: () => void
+  onOpenProfile: () => void
 }) {
-  const { t, journey, friction, sessions, achievements, snapshot, purpose } = useStore()
+  const { t, journey, friction, sessions, achievements, snapshot, purpose, awayGap } = useStore()
+  const community = useCommunity()
+
+  const recognitions = evaluateCommunityAchievements(
+    communityRecognitionState(community, awayGap),
+    t.community.achievements,
+  )
+  const communityEarned = recognitions.filter((r) => r.earned)
 
   if (!journey || !friction || !snapshot) return <p className="muted">{t.progress.loading}</p>
 
@@ -122,6 +133,29 @@ export function ProgressView({
             <Badge key={a.id} a={a} />
           ))}
         </ul>
+      </div>
+
+      <div className="card">
+        <div className="row row--between">
+          <div className="row">
+            <span className="ibadge ibadge--sm ibadge--forest">
+              <Icon name="user" size={18} />
+            </span>
+            <div className="eyebrow">{t.progress.community.eyebrow}</div>
+          </div>
+          <span className="muted" style={{ fontSize: 'var(--text-xs)' }}>
+            {t.progress.community.of(communityEarned.length, recognitions.length)}
+          </span>
+        </div>
+        <p className="muted" style={{ margin: '10px 0 12px', lineHeight: 1.55 }}>{t.progress.community.body}</p>
+        <ul className="badges">
+          {recognitions.map((r) => (
+            <Badge key={r.id} a={r} />
+          ))}
+        </ul>
+        <button className="btn btn--ghost btn--block" style={{ marginTop: 'var(--space-3)' }} onClick={onOpenProfile}>
+          {t.progress.community.viewProfile}
+        </button>
       </div>
 
       <div className="card">

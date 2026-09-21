@@ -666,6 +666,27 @@
   color: var(--ink-900);
   flex: none;
 }
+.cm-avatar--photo { object-fit: cover; }
+
+/* Avatar + name, tappable to open a profile. One row style used everywhere
+   Community shows who said something. */
+.cm-authorrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.cm-authorrow--btn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+.cm-authorrow--btn:hover .cm-authorrow__name { text-decoration: underline; }
+.cm-authorrow__name { font-size: var(--text-sm); font-weight: 650; color: var(--text-1); }
 
 .cm-presence {
   display: flex;
@@ -685,6 +706,24 @@
   box-shadow: 0 0 0 0 rgba(91, 205, 141, 0.55);
   animation: cm-pulse 2.6s ease-out infinite;
 }
+.cm-myprofile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  color: var(--text-1);
+  cursor: pointer;
+  text-align: left;
+}
+.cm-myprofile:hover { border-color: var(--forest-500); }
+.cm-myprofile__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.cm-myprofile__label { font-size: var(--text-sm); font-weight: 650; }
+.cm-myprofile__body { font-size: var(--text-xs); color: var(--text-3); }
+
 @keyframes cm-pulse {
   70% { box-shadow: 0 0 0 10px rgba(91, 205, 141, 0); }
   100% { box-shadow: 0 0 0 0 rgba(91, 205, 141, 0); }
@@ -868,10 +907,8 @@
 .cm-post--help { border-color: var(--orange-500); background: var(--orange-100); }
 .cm-post--recognition { border-color: var(--mint-500); background: var(--forest-100); }
 
-.cm-post__head { display: flex; align-items: center; gap: var(--space-3); }
-.cm-post__who { min-width: 0; }
-.cm-post__name { font-size: var(--text-sm); font-weight: 650; display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
-.cm-post__meta { font-size: var(--text-xs); color: var(--text-3); margin-top: 1px; }
+.cm-post__head { display: flex; flex-direction: column; gap: 2px; }
+.cm-post__meta { font-size: var(--text-xs); color: var(--text-3); }
 .cm-post__title { font-size: var(--text-md); font-weight: 640; margin-top: var(--space-3); line-height: 1.35; }
 .cm-post__text { font-size: var(--text-sm); line-height: 1.6; color: var(--text-2); margin: var(--space-2) 0 0; }
 .cm-post__resource {
@@ -932,7 +969,6 @@
 .cm-answer { padding: var(--space-3) 0; border-bottom: 1px dashed var(--border); }
 .cm-answer:last-of-type { border-bottom: 0; }
 .cm-answer__head { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
-.cm-answer__name { font-size: var(--text-sm); font-weight: 620; }
 .cm-answer__text { font-size: var(--text-sm); line-height: 1.6; color: var(--text-2); margin: var(--space-2) 0 var(--space-2); }
 .cm-answer__foot { display: flex; align-items: center; gap: var(--space-3); }
 .cm-answer__count { font-size: var(--text-xs); color: var(--text-3); }
@@ -1032,6 +1068,64 @@
 .cm-signal:hover { color: var(--text-1); }
 .cm-signal__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mint-500); flex: none; }
 .cm-signal svg { margin-left: auto; }
+
+/* Profile -------------------------------------------------------------
+   Own and peer share this layout. Nothing here ranks - no numeric score
+   next to a name, no comparison between one student's badges and another's. */
+.profile-head {
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+}
+.profile-avatar { position: relative; width: 88px; height: 88px; flex: none; }
+.profile-avatar__img {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+.profile-avatar__initials {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xl);
+  font-weight: 680;
+  color: var(--ink-900);
+}
+.profile-avatar__cam {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  background: var(--forest-600);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.profile-avatar__cam:hover { background: var(--forest-700); }
+.profile-avatar__input { position: absolute; inset: 0; opacity: 0; pointer-events: none; width: 0; height: 0; }
+.profile-head__name { font-size: var(--text-lg); font-weight: 660; }
+.profile-head__bio { font-size: var(--text-sm); color: var(--text-2); line-height: 1.55; margin: 0; max-width: 44ch; }
+.profile-field { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.profile-field__label { font-size: var(--text-xs); font-weight: 640; color: var(--text-3); }
+.profile-field__count { font-size: var(--text-xs); color: var(--text-3); align-self: flex-end; }
+.profile-mocktag {
+  font-size: var(--text-xs);
+  font-weight: 640;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--violet-100);
+  color: var(--violet-600);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .cm-presence__dot,

@@ -28,6 +28,7 @@ export type IconName =
   | 'chevron'
   | 'sun'
   | 'moon'
+  | 'camera'
 
 const paths: Record<IconName, ReactElement> = {
   home: (
@@ -155,6 +156,12 @@ const paths: Record<IconName, ReactElement> = {
     </>
   ),
   moon: <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z" />,
+  camera: (
+    <>
+      <path d="M4 8.5h3l1.5-2.5h7L17 8.5h3v11H4v-11Z" />
+      <circle cx="12" cy="14" r="3.5" />
+    </>
+  ),
 }
 
 export function Icon({

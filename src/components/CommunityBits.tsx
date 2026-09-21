@@ -5,6 +5,7 @@
  * state of its own, so the same pieces can later be fed by the Community
  * Service instead of the mock.
  */
+import type { ReactNode } from 'react'
 import { Icon } from './Icon'
 import type { Dict } from '@/i18n'
 import { sosOrder } from '@/lib/community'
@@ -17,6 +18,17 @@ import type {
 } from '@/types'
 
 export function Avatar({ author, size = 34 }: { author: CommunityAuthor; size?: number }) {
+  if (author.photoDataUrl) {
+    return (
+      <img
+        src={author.photoDataUrl}
+        alt=""
+        className="cm-avatar cm-avatar--photo"
+        style={{ width: size, height: size }}
+        aria-hidden="true"
+      />
+    )
+  }
   return (
     <span
       className={`cm-avatar tint--${author.tone}`}
@@ -25,6 +37,43 @@ export function Avatar({ author, size = 34 }: { author: CommunityAuthor; size?: 
     >
       {author.initials}
     </span>
+  )
+}
+
+/**
+ * Avatar + name, tappable to open that person's profile.
+ *
+ * One component for every place Community shows who said something - the
+ * post header, a comment, "your answer" - so opening a profile works the
+ * same way everywhere instead of being wired three separate times.
+ */
+export function AuthorRow({
+  author,
+  size = 34,
+  onOpen,
+  children,
+}: {
+  author: CommunityAuthor
+  size?: number
+  onOpen?: (authorId: string) => void
+  /** Extra content after the name, e.g. a kind tag. */
+  children?: ReactNode
+}) {
+  if (!onOpen) {
+    return (
+      <span className="cm-authorrow">
+        <Avatar author={author} size={size} />
+        <span className="cm-authorrow__name">{author.name}</span>
+        {children}
+      </span>
+    )
+  }
+  return (
+    <button className="cm-authorrow cm-authorrow--btn" onClick={() => onOpen(author.id)}>
+      <Avatar author={author} size={size} />
+      <span className="cm-authorrow__name">{author.name}</span>
+      {children}
+    </button>
   )
 }
 

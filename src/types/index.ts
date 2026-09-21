@@ -78,6 +78,30 @@ export interface Purpose {
   createdAt: string
 }
 
+/**
+ * Who the student is, to the small extent FARO asks.
+ *
+ * This is the only place a photo or a bio lives - it is never asked for
+ * anywhere else, and it is never required. Stored locally only (see
+ * `state/storage.ts`); nothing here is sent to the mentor
+ * (`lib/mentorContext.ts` does not read it) or to any other student except
+ * as what they see if they open this student's public profile in Community.
+ */
+export interface Profile {
+  /** Shown in Community once set. Empty until the student chooses one. */
+  name: string
+  /** A small square JPEG data URL, downsized client-side. Never a raw upload. */
+  photoDataUrl: string | null
+  /** One line, optional. Capped in the UI, not here. */
+  bio: string
+  /**
+   * Mock only - there is no real Tecmilenio SSO in this prototype. Labelled as
+   * simulated everywhere it appears; see `views/ProfileView.tsx`.
+   */
+  institutionLinked: boolean
+  updatedAt: string | null
+}
+
 export type MilestoneStatus =
   | 'completed'
   | 'current'
@@ -331,6 +355,12 @@ export interface CommunityAuthor {
   initials: string
   /** Avatar tint only. Not a status, not a level. */
   tone: 'forest' | 'mint' | 'violet' | 'orange' | 'teal'
+  /** One line, optional. Mock for peers; the student's own comes from `Profile`. */
+  bio?: string
+  /** Recognitions to show on a profile. Mock for peers; the student's own are evaluated live. */
+  badges?: CommunityAchievementId[]
+  /** Set only for the live student ('me'), from `Profile.photoDataUrl`. Peers stay initials-only. */
+  photoDataUrl?: string | null
 }
 
 export interface CommunityComment {

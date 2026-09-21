@@ -44,10 +44,19 @@ import type {
   MentorMessage,
   MentorStyle,
   NextBestAction,
+  Profile,
   Purpose,
   RecoveryStep,
   StudySession,
 } from '@/types'
+
+const EMPTY_PROFILE: Profile = {
+  name: '',
+  photoDataUrl: null,
+  bio: '',
+  institutionLinked: false,
+  updatedAt: null,
+}
 
 interface StoreValue {
   loading: boolean
@@ -56,6 +65,8 @@ interface StoreValue {
   t: Dict
   snapshot: CourseSnapshot | null
   purpose: Purpose | null
+  /** Photo/bio/institution-link, shown on the student's own public Community profile. */
+  profile: Profile
   mentorStyle: MentorStyle
   availableMinutes: number
   friction: FrictionSignal | null
@@ -75,6 +86,7 @@ interface StoreValue {
   points: PointsBreakdown
   setLang: (l: Lang) => void
   setPurpose: (p: Purpose) => void
+  setProfile: (p: Profile) => void
   setMentorStyle: (s: MentorStyle) => void
   setAvailableMinutes: (m: number) => void
   setMessages: (m: MentorMessage[]) => void
@@ -91,6 +103,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(detectLang)
   const [snapshot, setSnapshot] = useState<CourseSnapshot | null>(null)
   const [purpose, setPurposeState] = useState<Purpose | null>(null)
+  const [profile, setProfileState] = useState<Profile>(EMPTY_PROFILE)
   const [mentorStyle, setMentorStyleState] = useState<MentorStyle>('encouraging')
   const [availableMinutes, setAvailableMinutesState] = useState(20)
   const [messages, setMessages] = useState<MentorMessage[]>([])
@@ -101,13 +114,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let alive = true
     ;(async () => {
-      const [p, s, m, done, pz, l] = await Promise.all([
+      const [p, s, m, done, pz, l, pr] = await Promise.all([
         readValue<Purpose>('purpose'),
         readValue<MentorStyle>('mentorStyle'),
         readValue<number>('availableMinutes'),
         readValue<StudySession[]>('sessions'),
         readValue<boolean>('paused'),
         readValue<Lang>('lang'),
+        readValue<Profile>('profile'),
       ])
       if (!alive) return
       if (l === 'es' || l === 'en') setLangState(l)
@@ -116,6 +130,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (typeof m === 'number') setAvailableMinutesState(m)
       if (Array.isArray(done)) setSessions(done)
       if (typeof pz === 'boolean') setPausedState(pz)
+      if (pr) setProfileState(pr)
 
       const snap = await faroClient.getCourseSnapshot()
       if (!alive) return
@@ -141,6 +156,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     void writeValue('availableMinutes', p.weekdayMinutes)
   }, [])
 
+  const setProfile = useCallback((p: Profile) => {
+    setProfileState(p)
+    void writeValue('profile', p)
+  }, [])
+
   const setMentorStyle = useCallback((s: MentorStyle) => {
     setMentorStyleState(s)
     void writeValue('mentorStyle', s)
@@ -159,6 +179,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const reset = useCallback(() => {
     void clearAll()
     setPurposeState(null)
+    setProfileState(EMPTY_PROFILE)
     setMessages([])
     setSessions([])
     setLifeStateInner(null)
@@ -283,6 +304,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     t: dict(lang),
     snapshot: effective,
     purpose,
+    profile,
     mentorStyle,
     availableMinutes,
     friction,
@@ -299,6 +321,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     points,
     setLang,
     setPurpose,
+    setProfile,
     setMentorStyle,
     setAvailableMinutes,
     setMessages,

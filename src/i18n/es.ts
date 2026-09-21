@@ -16,7 +16,7 @@ export const es = {
     noGameOver: 'Sin Game Over. Recalcula tu ruta.',
     loading: 'Ubicando tu posición…',
     nav: { home: 'Inicio', journey: 'Ruta', mentor: 'FARO', community: 'Comunidad', rewards: 'Recompensas', progress: 'Progreso' },
-    back: { recovery: 'Recuperación', purpose: 'Tu propósito' },
+    back: { recovery: 'Recuperación', purpose: 'Tu propósito', profile: 'Perfil' },
     momentum: 'impulso',
     momentumTitle: 'Tu conexión con el curso',
     language: 'Idioma',
@@ -163,6 +163,12 @@ export const es = {
     momentum: 'impulso',
     modules: 'Módulos',
     resilience: { eyebrow: 'Resiliencia', of: (a: number, b: number) => `${a} de ${b}`, body: 'No son por terminar a tiempo. Son por continuar cuando habría sido más fácil parar.' },
+    community: {
+      eyebrow: 'Reconocimientos de comunidad',
+      of: (a: number, b: number) => `${a} de ${b}`,
+      body: 'Por ayudar a compañeros, no por ser popular. Se ganan igual que las de resiliencia: con lo que realmente hiciste.',
+      viewProfile: 'Ver tu perfil',
+    },
     sessions: { eyebrow: 'Sesiones de estudio en FARO', none: 'Nada registrado aún. FARO cuenta las sesiones que haces desde aquí, así que esto se llena conforme avanzas — empezando con un paso.', count: 'sesiones', time: 'tiempo invertido' },
     destination: { label: 'Tu destino', body: 'Cada sesión de arriba es un paso hacia esto, incluidas las que vinieron después de una pausa. Toca para cambiar tu rumbo.' },
     fullRoute: 'Ver la ruta completa',
@@ -440,6 +446,11 @@ export const es = {
       studying: (n: number, course: string) => `${n} estudiantes están estudiando ${course} ahora`,
       cta: 'Entrar a una sala',
     },
+    myProfile: {
+      eyebrow: 'Tu perfil en la comunidad',
+      body: 'Foto, biografía y tus insignias — visible para tus compañeros de curso.',
+      cta: 'Ver mi perfil',
+    },
     journeySignal: (n: number) => `${n} estudiantes están trabajando en este módulo esta semana.`,
     recoveryCta: {
       title: '¿Quieres reconectar con otros estudiantes?',
@@ -508,6 +519,49 @@ export const es = {
     weathered_the_storm: { title: 'Capeaste la tormenta', description: 'Seguiste avanzando en una semana en la que el trabajo se había acumulado.', hint: 'Se gana al completar un paso con más de un pendiente abierto.' },
     smart_session: { title: 'Sesión inteligente', description: 'Terminaste un paso dentro del tiempo que realmente tenías.', hint: 'Se gana al completar un paso que cabía en tu tiempo disponible.' },
     finisher: { title: 'Finalista', description: 'Completaste el curso.', hint: 'Se gana al final de la ruta.' },
+  },
+
+  /* ----------------------------------------------------------- profile */
+  /**
+   * Public within Community: anyone can open it from a name or avatar. It
+   * shows badges as a set, never a score, and it does not add a ranking that
+   * Community deliberately does not have.
+   */
+  profile: {
+    own: {
+      eyebrow: 'Tu perfil',
+      edit: 'Editar perfil',
+      save: 'Guardar',
+      cancel: 'Cancelar',
+      nameLabel: 'Nombre',
+      namePlaceholder: 'Tu nombre',
+      bioLabel: 'Biografía',
+      bioPlaceholder: 'Una línea sobre ti — qué estudias, por qué, o lo que quieras compartir.',
+      bioCount: (n: number, max: number) => `${n}/${max}`,
+      photoChange: 'Cambiar foto',
+      photoRemove: 'Quitar foto',
+      saved: 'Guardado.',
+      visibilityNote: 'Cualquier compañero de tu curso puede ver este perfil al tocar tu nombre en Comunidad.',
+    },
+    institution: {
+      title: 'Cuenta institucional',
+      mockTag: 'Simulado',
+      body: 'Prototipo: todavía no hay una conexión real con Tecmilenio. En producción esto usaría el inicio de sesión institucional real — FARO nunca te pediría tu contraseña.',
+      linked: 'Vinculado (simulado) con tu cuenta Tecmilenio',
+      notLinked: 'No vinculado',
+      link: 'Vincular con Tecmilenio (simulado)',
+      unlink: 'Desvincular',
+    },
+    badges: {
+      resilience: { eyebrow: 'Resiliencia', of: (a: number, b: number) => `${a} de ${b}` },
+      community: { eyebrow: 'Comunidad', of: (a: number, b: number) => `${a} de ${b}` },
+      empty: 'Todavía no hay insignias. Aparecen solas conforme avanzas — nunca se pierden por una pausa.',
+    },
+    peer: {
+      noBio: 'Todavía no escribió una biografía.',
+      note: 'Aquí solo ves lo que esta persona decidió compartir. FARO no muestra rankings ni quién va adelante — esto no es eso.',
+    },
+    back: 'Volver a Comunidad',
   },
 }
 

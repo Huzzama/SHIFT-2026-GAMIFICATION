@@ -25,12 +25,53 @@ const HOUR = 60 * MIN
 const now = Date.now()
 const ago = (ms: number) => new Date(now - ms).toISOString()
 
+/**
+ * `bio` and `badges` on the mock peers are demo flavour, not a computed
+ * result - there is no real second student to evaluate. The student's own
+ * profile is never like this: their badges are always the live output of
+ * `lib/achievements.ts` and `lib/community.ts`, never hand-set.
+ */
 export const mockAuthors: CommunityAuthor[] = [
-  { id: 'u1', name: 'Andrea', initials: 'A', tone: 'violet' },
-  { id: 'u2', name: 'Carlos', initials: 'C', tone: 'forest' },
-  { id: 'u3', name: 'Daniela', initials: 'D', tone: 'orange' },
-  { id: 'u4', name: 'Miguel', initials: 'M', tone: 'teal' },
-  { id: 'u5', name: 'Lucía', initials: 'L', tone: 'mint' },
+  {
+    id: 'u1',
+    name: 'Andrea',
+    initials: 'A',
+    tone: 'violet',
+    bio: 'Ejecutiva de cuentas. Estudia entre juntas y comparte cuando algo por fin le hace sentido.',
+    badges: ['knowledge_sharer'],
+  },
+  {
+    id: 'u2',
+    name: 'Carlos',
+    initials: 'C',
+    tone: 'forest',
+    bio: 'Ingeniero. Le gusta explicar las cosas con ejemplos, no solo con la definición.',
+    badges: ['community_builder', 'helpful_peer'],
+  },
+  {
+    id: 'u3',
+    name: 'Daniela',
+    initials: 'D',
+    tone: 'orange',
+    bio: 'Está armando su primer cronograma real en el trabajo mientras lo aprende aquí.',
+    badges: [],
+  },
+  {
+    id: 'u4',
+    name: 'Miguel',
+    initials: 'M',
+    tone: 'teal',
+    bio: 'Volvió después de 8 días fuera y sigue en el curso.',
+    badges: ['community_comeback'],
+  },
+  {
+    id: 'u5',
+    name: 'Lucía',
+    initials: 'L',
+    tone: 'mint',
+    bio: 'Comparte un truco de estudio casi cada semana.',
+    badges: ['knowledge_sharer', 'study_companion'],
+  },
   { id: 'me', name: 'Tú', initials: 'T', tone: 'teal' },
 ]
 
