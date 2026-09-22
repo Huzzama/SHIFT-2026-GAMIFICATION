@@ -562,6 +562,21 @@ export const es = {
       note: 'Aquí solo ves lo que esta persona decidió compartir. FARO no muestra rankings ni quién va adelante — esto no es eso.',
     },
     back: 'Volver a Comunidad',
+    canvas: {
+      title: 'Integración con Canvas',
+      course: (id: number) => `Curso ${id} · Gestión de Proyectos`,
+      modeMock: 'Simulado',
+      modeLive: 'En vivo',
+      bodyMock: 'Las rutas, las respuestas y la traducción de datos son las reales de la API de Canvas. Lo único simulado es el servidor: en vez de una institución, responden datos de prueba. Cambiar a un Canvas real es cambiar un valor en la configuración, no reescribir la app.',
+      bodyLive: 'FARO está leyendo de tu Canvas institucional. Canvas sigue siendo la fuente de verdad de todo lo académico.',
+      endpointsTitle: 'Lo que FARO consulta',
+      readOnly: 'Cuatro llamadas, todas de lectura. FARO no tiene forma de modificar tu curso.',
+      refusedTitle: 'Permisos que FARO NO pide',
+      refusedNote: 'Sin estos permisos LTI, FARO no puede escribir calificaciones ni crear actividades. Tu administrador de Canvas puede verificarlo en la pantalla de la clave de desarrollador.',
+      logTitle: (n: number) => `Registro de llamadas (${n})`,
+      logEmpty: 'Todavía no hay llamadas en esta sesión.',
+      rows: (n: number) => `${n} filas ·`,
+    },
   },
 }
 
