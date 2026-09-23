@@ -11,10 +11,13 @@ type Opener = (momentumIsLow: boolean) => string
 export const es = {
   /* ------------------------------------------------------------- shell */
   shell: {
+    pointsToast: (n: number) => `+${n} puntos`,
     tagline: 'Focus. Advance. Reward. Own.',
     promise: 'Difícil de abandonar. Fácil de volver.',
     noGameOver: 'Sin Game Over. Recalcula tu ruta.',
     loading: 'Ubicando tu posición…',
+    loadError: 'No pude conectar con el backend de FARO. Revisa que el servidor esté corriendo y vuelve a intentar.',
+    retry: 'Reintentar',
     nav: { home: 'Inicio', journey: 'Ruta', mentor: 'FARO', community: 'Comunidad', rewards: 'Recompensas', progress: 'Progreso' },
     back: { recovery: 'Recuperación', purpose: 'Tu propósito', profile: 'Perfil' },
     momentum: 'impulso',
@@ -496,20 +499,92 @@ export const es = {
   rewards: {
     eyebrow: 'Recompensas',
     title: 'Puntos FARO',
-    body: 'Ganas puntos por lo que realmente haces: completar un paso, terminar un módulo, sostener tu ritmo, y por volver después de una pausa. Nada se cobra por adelantado y nada se pierde si te detienes.',
-    balance: 'Balance actual',
+    body: 'Ganas puntos por lo que realmente haces: terminar actividades y módulos, sostener tu ritmo, volver después de una pausa, reconectar con tarjetas de repaso. Los puntos del semestre te acercan a una recompensa real.',
+    balance: 'Tus puntos este semestre',
+    thisWeek: (n: number) => `+${n.toLocaleString('es-MX')} esta semana`,
+    simulated: 'Simulado',
+    next: {
+      eyebrow: 'Tu siguiente recompensa',
+      reward: (mxn: number) => `$${mxn} MXN`,
+      of: (a: number, b: number) => `${a.toLocaleString('es-MX')} / ${b.toLocaleString('es-MX')}`,
+      percent: (p: number) => `${p}% desbloqueado`,
+      toNext: (n: number) => `Te faltan ${n.toLocaleString('es-MX')} puntos`,
+      finishCourse: (n: number, course: string) =>
+        `Terminar ${course} vale al menos ${n.toLocaleString('es-MX')} puntos más.`,
+      keep: 'Seguir avanzando',
+      reachedEyebrow: 'Meta del semestre',
+      reachedTitle: '¡Recompensa desbloqueada!',
+      reachedBody: (mxn: number) => `Llegaste a la meta del semestre. Tu recompensa de $${mxn} MXN está lista para canjear.`,
+    },
+    catalog: {
+      eyebrow: 'Recompensas del semestre',
+      body: 'Una por semestre, hasta $200 MXN. Los niveles no se gastan: se desbloquean al acumular puntos, y tú decides cuándo canjear.',
+      points: (n: number) => `${n.toLocaleString('es-MX')} pts`,
+      redeem: 'Canjear',
+      locked: (n: number) => `Faltan ${n.toLocaleString('es-MX')}`,
+      unlocked: 'Desbloqueada',
+      redeemed: 'Canjeada',
+      closed: 'Cerrada este semestre',
+      confirm: {
+        title: (mxn: number) => `¿Canjear $${mxn} MXN ahora?`,
+        body: (cap: number) =>
+          `Canjear cierra tu recompensa de este semestre en este nivel. Si sigues acumulando, puedes llegar a $${cap} MXN.`,
+        yes: 'Sí, canjear',
+        no: 'Seguir acumulando',
+      },
+    },
+    redeemedCard: {
+      title: (mxn: number) => `$${mxn} MXN canjeados`,
+      body: 'Simulado: en un piloto real, la institución entregaría la recompensa. Tus puntos siguen contando para tu progreso.',
+    },
     breakdown: {
       title: 'De dónde vienen',
-      activities: (n: number) => `Pasos completados (${n})`,
+      thisCourse: (course: string) => `Este curso · ${course}`,
+      previous: 'Cursos anteriores del semestre',
+      activities: (n: number) => `Actividades completadas (${n})`,
       modules: (n: number) => `Módulos terminados (${n})`,
       rhythm: 'Bonos por ritmo sostenido',
       comeback: 'Bono por volver',
+      reviews: (n: number) => `Tarjetas de reconexión (${n})`,
       community: 'Aportes a la comunidad',
     },
-    comingSoon: {
-      title: 'El catálogo de recompensas llega después',
-      body: 'Por ahora tus puntos se acumulan de verdad, a partir de acciones reales. Canjearlos es la siguiente fase — todavía no hay nada que gastar.',
+    disclaimer:
+      'Prototipo: los montos, los cursos anteriores del semestre y el canje son simulados. En producción los define y financia la institución.',
+  },
+
+  /* ------------------------------------------------------ review cards */
+  review: {
+    offer: {
+      eyebrow: 'Reconecta en 2 minutos',
+      title: 'Tres preguntas de lo último que viste',
+      body: (module: string) =>
+        `Sobre ${module}. No es un examen y no cuenta para tu calificación: es para que compruebes que no olvidaste todo.`,
+      points: (n: number) => `+${n} puntos al terminar`,
+      start: 'Empezar',
+      skip: 'Ahora no',
     },
+    deck: {
+      close: 'Cerrar',
+      progress: (i: number, n: number) => `Pregunta ${i} de ${n}`,
+      module: (name: string) => `Módulo · ${name}`,
+      correct: '¡Eso es!',
+      wrong: 'Casi. Aquí va la idea:',
+      retry: 'Intenta otra vez',
+      next: 'Siguiente',
+      finish: 'Terminar',
+      note: 'No cuenta para tu calificación. Nadie más ve tus respuestas.',
+    },
+    done: {
+      flag: 'Reconectado',
+      title: 'Estás reconectado',
+      body: (firstTry: number, n: number) =>
+        firstTry === n
+          ? `Recordaste las ${n} a la primera. Lo que estudiaste sigue ahí.`
+          : `Recordaste ${firstTry} de ${n} a la primera y repasaste el resto. Lo que estudiaste sigue ahí.`,
+      points: (n: number) => `+${n} puntos FARO`,
+      cta: 'Ver mi ruta de regreso',
+    },
+    banner: (n: number) => `Reconectado hoy · +${n} puntos`,
   },
 
   /* ------------------------------------------------------ achievements */
@@ -562,6 +637,26 @@ export const es = {
       note: 'Aquí solo ves lo que esta persona decidió compartir. FARO no muestra rankings ni quién va adelante — esto no es eso.',
     },
     back: 'Volver a Comunidad',
+    canvas: {
+      title: 'Integración con Canvas',
+      course: (id: number) => `Curso ${id} · Gestión de Proyectos`,
+      modeMock: 'Simulado',
+      modeLive: 'En vivo',
+      bodyMock: 'Las rutas, las respuestas y la traducción de datos son las reales de la API de Canvas. Lo único simulado es el servidor: en vez de una institución, responden datos de prueba. Cambiar a un Canvas real es cambiar un valor en la configuración, no reescribir la app.',
+      bodyLive: 'FARO está leyendo de tu Canvas institucional. Canvas sigue siendo la fuente de verdad de todo lo académico.',
+      endpointsTitle: 'Lo que FARO consulta',
+      readOnly: 'Cuatro llamadas, todas de lectura. FARO no tiene forma de modificar tu curso.',
+      refusedTitle: 'Permisos que FARO NO pide',
+      refusedNote: 'Sin estos permisos LTI, FARO no puede escribir calificaciones ni crear actividades. Tu administrador de Canvas puede verificarlo en la pantalla de la clave de desarrollador.',
+      logTitle: (n: number) => `Registro de llamadas (${n})`,
+      logEmpty: 'Todavía no hay llamadas en esta sesión.',
+      courseLive: (id: number, name: string) => `Curso ${id} · ${name}`,
+      courseResolving: 'Identificando tu curso…',
+      backend: (host: string) => `Las llamadas pasan por el backend de FARO (${host}), que guarda el token institucional. La extensión no tiene credenciales.`,
+      launchUnverified: 'Lanzamiento sin firma LTI: el curso y la persona se dedujeron del token, no de Canvas.',
+      activityFallback: 'Tu cuenta no puede leer las analíticas de Canvas, así que la actividad se calcula con las fechas de tus propias entregas.',
+      rows: (n: number) => `${n} filas ·`,
+    },
   },
 }
 

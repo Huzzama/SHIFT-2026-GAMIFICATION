@@ -3,9 +3,13 @@
  *
  * The order of this screen is the product argument, and it is deliberate:
  *
- *   Welcome back → where you actually are → can you still finish →
- *   what happened → how much time you have → the new route → why →
- *   the one thing to do now.
+ *   Welcome back → reconnect (three review cards, optional) → where you
+ *   actually are → can you still finish → what happened → how much time
+ *   you have → the new route → why → the one thing to do now.
+ *
+ * The review cards come second on purpose. After days away, the first
+ * thing a student needs is not a plan but proof that they still remember
+ * something - two minutes they can succeed at, before the numbers.
  *
  * Never show the student everything they owe before showing them how they can
  * finish. There is no overdue count anywhere on this screen, no red, no Game
@@ -16,7 +20,10 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '@/components/Icon'
+import { ReviewDeck } from '@/components/ReviewDeck'
 import { useStore } from '@/state/store'
+import { pointsConfig } from '@/lib/points'
+import { reviewedToday } from '@/lib/reviewCards'
 import { interventionFor, lifeStateLabel, lifeStateOrder } from '@/lib/lifeHappened'
 import {
   buildPlan,
@@ -74,6 +81,9 @@ export function RecoveryView({
     setPaused,
     completeMilestone,
     sessions,
+    reviews,
+    reviewSet,
+    reviewOffered,
   } = useStore()
 
   const [stage, setStage] = useState<Stage>('analyzing')
@@ -83,6 +93,8 @@ export function RecoveryView({
   const [whyOpen, setWhyOpen] = useState(false)
   const [updated, setUpdated] = useState(false)
   const [finished, setFinished] = useState<PlanItem | null>(null)
+  const [deckOpen, setDeckOpen] = useState(false)
+  const [reviewSkipped, setReviewSkipped] = useState(false)
 
   /* -- Stage 2: analysing. Brief, honest, and skipped when motion is off. */
   useEffect(() => {
@@ -220,7 +232,50 @@ export function RecoveryView({
         <h1 className="rcv-hero__title">{copy.welcome.title}</h1>
         <p className="rcv-hero__sub">{copy.welcome.sub}</p>
         {awayGap > 0 && <p className="rcv-hero__away">{copy.welcome.away(awayGap)}</p>}
+        {reviewedToday(reviews) && (
+          <p className="rcv-hero__reconnected">
+            <Icon name="check" size={14} /> {t.review.banner(pointsConfig.REVIEW_SET_BONUS)}
+          </p>
+        )}
       </section>
+
+      {/* A2 — Reconnect. Three cards on what they last studied, before any
+          number. Optional, and "not now" is always one tap away. */}
+      {reviewOffered && !reviewSkipped && (
+        <section className="rv-offer">
+          <div className="rv-offer__eyebrow">
+            <Icon name="spark" size={14} /> {t.review.offer.eyebrow}
+          </div>
+          <div className="rv-offer__title">{t.review.offer.title}</div>
+          <p className="rv-offer__body">
+            {t.review.offer.body(
+              journey.milestones.find((m) => m.moduleId === reviewSet[0]?.moduleId)?.subtitle ?? '',
+            )}
+          </p>
+          <div className="rv-offer__cards" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className="rv-offer__points">{t.review.offer.points(pointsConfig.REVIEW_SET_BONUS)}</div>
+          <div className="rv-offer__actions">
+            <button className="btn btn--beacon" style={{ flex: 1 }} onClick={() => setDeckOpen(true)}>
+              {t.review.offer.start} <Icon name="arrow" size={16} />
+            </button>
+            <button className="btn btn--onDark" onClick={() => setReviewSkipped(true)}>
+              {t.review.offer.skip}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {deckOpen && (
+        <ReviewDeck
+          questions={reviewSet}
+          onClose={() => setDeckOpen(false)}
+          onDone={() => setDeckOpen(false)}
+        />
+      )}
 
       {/* B — The situation in three numbers. Not eighteen rows. */}
       <section className="card">

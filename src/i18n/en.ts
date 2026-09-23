@@ -3,10 +3,13 @@ import type { Dict } from './es'
 /** English copy, typed against the Spanish dictionary so no key can go missing. */
 export const en: Dict = {
   shell: {
+    pointsToast: (n: number) => `+${n} points`,
     tagline: 'Focus. Advance. Reward. Own.',
     promise: 'Hard to quit. Easy to return.',
     noGameOver: 'No Game Over. Recalculate your route.',
     loading: 'Finding your position…',
+    loadError: 'Could not reach the FARO backend. Check that the server is running and try again.',
+    retry: 'Retry',
     nav: { home: 'Home', journey: 'Journey', mentor: 'FARO', community: 'Community', rewards: 'Rewards', progress: 'Progress' },
     back: { recovery: 'Recovery', purpose: 'Your purpose', profile: 'Profile' },
     momentum: 'momentum',
@@ -475,20 +478,91 @@ export const en: Dict = {
   rewards: {
     eyebrow: 'Rewards',
     title: 'FARO Points',
-    body: 'You earn points for what you actually do: finishing a step, completing a module, keeping your rhythm, and coming back after a pause. Nothing is charged up front, and nothing is lost if you stop.',
-    balance: 'Current balance',
+    body: 'You earn points for what you actually do: finishing activities and modules, keeping your rhythm, coming back after a pause, reconnecting with review cards. The semester\'s points bring you closer to a real reward.',
+    balance: 'Your points this semester',
+    thisWeek: (n: number) => `+${n.toLocaleString('en-US')} this week`,
+    simulated: 'Simulated',
+    next: {
+      eyebrow: 'Your next reward',
+      reward: (mxn: number) => `$${mxn} MXN`,
+      of: (a: number, b: number) => `${a.toLocaleString('en-US')} / ${b.toLocaleString('en-US')}`,
+      percent: (p: number) => `${p}% unlocked`,
+      toNext: (n: number) => `${n.toLocaleString('en-US')} points to go`,
+      finishCourse: (n: number, course: string) =>
+        `Finishing ${course} is worth at least ${n.toLocaleString('en-US')} more points.`,
+      keep: 'Keep going',
+      reachedEyebrow: 'Semester goal',
+      reachedTitle: 'Reward unlocked!',
+      reachedBody: (mxn: number) => `You reached the semester goal. Your $${mxn} MXN reward is ready to redeem.`,
+    },
+    catalog: {
+      eyebrow: 'Semester rewards',
+      body: 'One per semester, up to $200 MXN. Tiers are not spent: they unlock as you earn points, and you decide when to redeem.',
+      points: (n: number) => `${n.toLocaleString('en-US')} pts`,
+      redeem: 'Redeem',
+      locked: (n: number) => `${n.toLocaleString('en-US')} to go`,
+      unlocked: 'Unlocked',
+      redeemed: 'Redeemed',
+      closed: 'Closed this semester',
+      confirm: {
+        title: (mxn: number) => `Redeem $${mxn} MXN now?`,
+        body: (cap: number) =>
+          `Redeeming closes this semester's reward at this tier. If you keep going, you can reach $${cap} MXN.`,
+        yes: 'Yes, redeem',
+        no: 'Keep earning',
+      },
+    },
+    redeemedCard: {
+      title: (mxn: number) => `$${mxn} MXN redeemed`,
+      body: 'Simulated: in a real pilot, the institution would deliver the reward. Your points still count towards your progress.',
+    },
     breakdown: {
       title: 'Where they come from',
-      activities: (n: number) => `Steps completed (${n})`,
+      thisCourse: (course: string) => `This course · ${course}`,
+      previous: 'Previous courses this semester',
+      activities: (n: number) => `Activities completed (${n})`,
       modules: (n: number) => `Modules finished (${n})`,
       rhythm: 'Sustained-rhythm bonuses',
       comeback: 'Comeback bonus',
+      reviews: (n: number) => `Review cards (${n})`,
       community: 'Community contributions',
     },
-    comingSoon: {
-      title: 'The rewards catalog comes later',
-      body: 'For now your points really accrue, from real actions. Redeeming them is the next phase - there is nothing to spend them on yet.',
+    disclaimer:
+      'Prototype: the amounts, the semester\'s previous courses and redemption are simulated. In production the institution sets and funds them.',
+  },
+
+  review: {
+    offer: {
+      eyebrow: 'Reconnect in 2 minutes',
+      title: 'Three questions on what you saw last',
+      body: (module: string) =>
+        `About ${module}. It is not a test and does not count towards your grade: it is so you can check you have not forgotten everything.`,
+      points: (n: number) => `+${n} points when you finish`,
+      start: 'Start',
+      skip: 'Not now',
     },
+    deck: {
+      close: 'Close',
+      progress: (i: number, n: number) => `Question ${i} of ${n}`,
+      module: (name: string) => `Module · ${name}`,
+      correct: 'That\'s it!',
+      wrong: 'Almost. Here is the idea:',
+      retry: 'Try again',
+      next: 'Next',
+      finish: 'Finish',
+      note: 'It does not count towards your grade. Nobody else sees your answers.',
+    },
+    done: {
+      flag: 'Reconnected',
+      title: 'You are reconnected',
+      body: (firstTry: number, n: number) =>
+        firstTry === n
+          ? `You remembered all ${n} first time. What you studied is still there.`
+          : `You remembered ${firstTry} of ${n} first time and reviewed the rest. What you studied is still there.`,
+      points: (n: number) => `+${n} FARO points`,
+      cta: 'See my way back',
+    },
+    banner: (n: number) => `Reconnected today · +${n} points`,
   },
 
   achievements: {
@@ -534,5 +608,25 @@ export const en: Dict = {
       note: "You only see what this person chose to share here. FARO doesn't show rankings or who is ahead — this isn't that.",
     },
     back: 'Back to Community',
+    canvas: {
+      title: 'Canvas integration',
+      course: (id: number) => `Course ${id} · Gestión de Proyectos`,
+      modeMock: 'Simulated',
+      modeLive: 'Live',
+      bodyMock: 'The paths, the response shapes and the data mapping are the real Canvas API. Only the server is simulated: fixtures answer instead of an institution. Pointing this at a real Canvas is a configuration change, not a rewrite.',
+      bodyLive: 'FARO is reading from your institutional Canvas. Canvas remains the source of truth for everything academic.',
+      endpointsTitle: 'What FARO calls',
+      readOnly: 'Four calls, all reads. FARO has no way to modify your course.',
+      refusedTitle: 'Permissions FARO does NOT request',
+      refusedNote: 'Without these LTI scopes, FARO cannot write grades or create activities. Your Canvas administrator can verify it on the developer key screen.',
+      logTitle: (n: number) => `Request log (${n})`,
+      logEmpty: 'No calls yet in this session.',
+      courseLive: (id: number, name: string) => `Course ${id} · ${name}`,
+      courseResolving: 'Identifying your course…',
+      backend: (host: string) => `Calls go through the FARO backend (${host}), which holds the institutional token. The extension has no credentials.`,
+      launchUnverified: 'Launch not signed by LTI: the course and person were inferred from the token, not asserted by Canvas.',
+      activityFallback: 'Your account cannot read Canvas analytics, so activity is derived from the dates of your own submissions.',
+      rows: (n: number) => `${n} rows ·`,
+    },
   },
 }

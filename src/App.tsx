@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Icon, type IconName } from '@/components/Icon'
 import { LangToggle } from '@/components/LangToggle'
 import { MomentumBadge } from '@/components/MomentumBadge'
+import { PointsToast } from '@/components/PointsToast'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { Wordmark } from '@/components/Wordmark'
 import { DashboardView } from '@/views/DashboardView'
@@ -33,6 +34,12 @@ import type { LifeState } from '@/types'
 type Tab = 'home' | 'journey' | 'mentor' | 'community' | 'rewards' | 'progress'
 type View = Tab | 'recovery' | 'purpose' | 'profile'
 
+/**
+ * FARO is raised above the other tabs because it is the part that connects
+ * the rest: it notices the friction, it explains, it sends the student to
+ * Recovery or Community. Where am I and where am I going sit before it; the
+ * people, the payoff and the record of what was built come after.
+ */
 const TABS: { id: Tab; icon: IconName }[] = [
   { id: 'home', icon: 'home' },
   { id: 'journey', icon: 'route' },
@@ -43,7 +50,7 @@ const TABS: { id: Tab; icon: IconName }[] = [
 ]
 
 export default function App() {
-  const { loading, purpose, friction, setLifeState, t } = useStore()
+  const { loading, loadError, reload, purpose, friction, setLifeState, t } = useStore()
   const [view, setView] = useState<View>('home')
   const [profileAuthorId, setProfileAuthorId] = useState('me')
 
@@ -63,6 +70,28 @@ export default function App() {
         <div className="main">
           <div className="app__body">
             <p className="muted">{t.shell.loading}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // The backend could not answer. Say so and offer a retry; never render a
+  // course out of nothing.
+  if (loadError) {
+    return (
+      <div className="shell">
+        <div className="main">
+          <div className="app__body">
+            <div className="card">
+              <p className="muted" style={{ margin: 0, lineHeight: 1.55 }}>{t.shell.loadError}</p>
+              <code className="muted" style={{ display: 'block', margin: '10px 0 14px', fontSize: 'var(--text-xs)' }}>
+                {loadError}
+              </code>
+              <button className="btn" onClick={reload}>
+                {t.shell.retry}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -100,7 +129,7 @@ export default function App() {
           {TABS.map(({ id, icon }) => (
             <button
               key={id}
-              className={`navitem${tab === id ? ' navitem--active' : ''}`}
+              className={`navitem${tab === id ? ' navitem--active' : ''}${id === 'mentor' ? ' navitem--faro' : ''}`}
               onClick={() => setView(id)}
             >
               <Icon name={icon} size={20} />
@@ -146,6 +175,8 @@ export default function App() {
           </button>
         )}
 
+        <PointsToast />
+
         <div className="app__body">
           {view === 'home' && (
             <DashboardView
@@ -168,7 +199,7 @@ export default function App() {
             />
           )}
           {view === 'mentor' && <MentorView />}
-          {view === 'rewards' && <RewardsView />}
+          {view === 'rewards' && <RewardsView onOpenJourney={() => setView('journey')} />}
           {view === 'progress' && (
             <ProgressView
               onOpenJourney={() => setView('journey')}
@@ -194,10 +225,16 @@ export default function App() {
           {TABS.map(({ id, icon }) => (
             <button
               key={id}
-              className={`tab${tab === id ? ' tab--active' : ''}`}
+              className={`tab${tab === id ? ' tab--active' : ''}${id === 'mentor' ? ' tab--faro' : ''}`}
               onClick={() => setView(id)}
             >
-              <Icon name={icon} size={22} stroke={tab === id ? 2.2 : 1.8} />
+              {id === 'mentor' ? (
+                <span className="tab__beacon">
+                  <Icon name={icon} size={24} stroke={2} />
+                </span>
+              ) : (
+                <Icon name={icon} size={22} stroke={tab === id ? 2.2 : 1.8} />
+              )}
               {t.shell.nav[id]}
             </button>
           ))}

@@ -30,6 +30,10 @@ import {
 import { buildJourney, nextBestAction, recoveryRoute } from '@/lib/journey'
 import { minutesFor } from '@/lib/lifeHappened'
 import { computePoints, type PointsBreakdown } from '@/lib/points'
+import { pickReviewSet, shouldOfferReview } from '@/lib/reviewCards'
+import { semesterStatus, type SemesterStatus } from '@/lib/rewards'
+import { reviewBank, REVIEW_BANK_COURSE_ID } from '@/data/reviewBank'
+import { previousCourses } from '@/data/rewards.mock'
 import { learningRhythm } from '@/lib/rhythm'
 import { applySessions } from '@/lib/sessions'
 import { useCommunityPoints } from './community'
@@ -47,6 +51,10 @@ import type {
   Profile,
   Purpose,
   RecoveryStep,
+  Redemption,
+  ReviewQuestion,
+  ReviewRecord,
+  RewardTier,
   StudySession,
 } from '@/types'
 
@@ -60,6 +68,10 @@ const EMPTY_PROFILE: Profile = {
 
 interface StoreValue {
   loading: boolean
+  /** Set when the course snapshot could not be fetched (backend down, token rejected). */
+  loadError: string | null
+  /** Try the snapshot again after a load error. */
+  reload: () => void
   lang: Lang
   /** The active dictionary. Views read copy from here, never from literals. */
   t: Dict
@@ -82,8 +94,18 @@ interface StoreValue {
   awayGap: number
   /** Consecutive active days, ending today. Shown alongside momentum, never instead of it. */
   rhythmDays: number
-  /** FARO Points: a configurable mock balance, see `lib/points.ts`. */
+  /** FARO Points earned in this course, see `lib/points.ts`. */
   points: PointsBreakdown
+  /** The semester's reward track: this course plus previous ones, see `lib/rewards.ts`. */
+  semester: SemesterStatus
+  /** Finished review-card sets. */
+  reviews: ReviewRecord[]
+  /** The three cards for this return, or [] when there is nothing to review. */
+  reviewSet: ReviewQuestion[]
+  /** Whether Recovery should offer the cards right now. */
+  reviewOffered: boolean
+  completeReview: (questionIds: string[], firstTry: number) => void
+  redeem: (tier: RewardTier) => void
   setLang: (l: Lang) => void
   setPurpose: (p: Purpose) => void
   setProfile: (p: Profile) => void
@@ -100,6 +122,8 @@ const StoreContext = createContext<StoreValue | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [reloadTick, setReloadTick] = useState(0)
   const [lang, setLangState] = useState<Lang>(detectLang)
   const [snapshot, setSnapshot] = useState<CourseSnapshot | null>(null)
   const [purpose, setPurposeState] = useState<Purpose | null>(null)
@@ -110,11 +134,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [sessions, setSessions] = useState<StudySession[]>([])
   const [lifeState, setLifeStateInner] = useState<LifeState | null>(null)
   const [paused, setPausedState] = useState(false)
+  const [reviews, setReviews] = useState<ReviewRecord[]>([])
+  const [redemption, setRedemption] = useState<Redemption | null>(null)
 
   useEffect(() => {
     let alive = true
     ;(async () => {
-      const [p, s, m, done, pz, l, pr] = await Promise.all([
+      const [p, s, m, done, pz, l, pr, rv, rd] = await Promise.all([
         readValue<Purpose>('purpose'),
         readValue<MentorStyle>('mentorStyle'),
         readValue<number>('availableMinutes'),
@@ -122,6 +148,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         readValue<boolean>('paused'),
         readValue<Lang>('lang'),
         readValue<Profile>('profile'),
+        readValue<ReviewRecord[]>('reviews'),
+        readValue<Redemption>('redemption'),
       ])
       if (!alive) return
       if (l === 'es' || l === 'en') setLangState(l)
@@ -131,15 +159,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (Array.isArray(done)) setSessions(done)
       if (typeof pz === 'boolean') setPausedState(pz)
       if (pr) setProfileState(pr)
+      if (Array.isArray(rv)) setReviews(rv)
+      if (rd) setRedemption(rd)
 
-      const snap = await faroClient.getCourseSnapshot()
-      if (!alive) return
-      setSnapshot(snap)
+      try {
+        const snap = await faroClient.getCourseSnapshot()
+        if (!alive) return
+        setSnapshot(snap)
+        setLoadError(null)
+      } catch (err) {
+        // The message is for the developer console; the UI shows its own copy.
+        console.error('[FARO] course snapshot failed', err)
+        if (!alive) return
+        setLoadError(err instanceof Error ? err.message : 'unknown')
+      }
       setLoading(false)
     })()
     return () => {
       alive = false
     }
+  }, [reloadTick])
+
+  const reload = useCallback(() => {
+    setLoading(true)
+    setLoadError(null)
+    setReloadTick((n) => n + 1)
   }, [])
 
   const setLang = useCallback((l: Lang) => {
@@ -184,6 +228,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setSessions([])
     setLifeStateInner(null)
     setPausedState(false)
+    setReviews([])
+    setRedemption(null)
   }, [])
 
   /**
@@ -248,8 +294,52 @@ export function StoreProvider({ children }: { children: ReactNode }) {
    */
   const communityPoints = useCommunityPoints()
   const points = useMemo(
-    () => computePoints({ sessions, journey, rhythmDays, awayGap, community: communityPoints }),
-    [sessions, journey, rhythmDays, awayGap, communityPoints],
+    () => computePoints({ sessions, journey, rhythmDays, awayGap, community: communityPoints, reviews }),
+    [sessions, journey, rhythmDays, awayGap, communityPoints, reviews],
+  )
+
+  const semester = useMemo(
+    () =>
+      semesterStatus({
+        currentCourse: points.total,
+        previousCourses: previousCourses.reduce((sum, c) => sum + c.points, 0),
+        redemption,
+      }),
+    [points.total, redemption],
+  )
+
+  /**
+   * The review cards for this return. Only for the course the bank was
+   * written for: a live course with no bank gets no cards, not borrowed ones.
+   */
+  const reviewSet = useMemo(
+    () => (journey && journey.courseId === REVIEW_BANK_COURSE_ID ? pickReviewSet(journey, reviewBank) : []),
+    [journey],
+  )
+  const reviewOffered = shouldOfferReview({
+    awayGap,
+    frictionDays: frictionRules.frictionDays,
+    questions: reviewSet,
+    records: reviews,
+  })
+
+  const completeReview = useCallback((questionIds: string[], firstTry: number) => {
+    setReviews((prev) => {
+      const next = [...prev, { id: `r-${Date.now()}`, at: new Date().toISOString(), questionIds, firstTry }]
+      void writeValue('reviews', next)
+      return next
+    })
+  }, [])
+
+  /** One redemption per semester. Simulated: nothing leaves the device. */
+  const redeem = useCallback(
+    (tier: RewardTier) => {
+      if (redemption || semester.total < tier.points) return
+      const r: Redemption = { tierId: tier.id, mxn: tier.mxn, at: new Date().toISOString() }
+      setRedemption(r)
+      void writeValue('redemption', r)
+    },
+    [redemption, semester.total],
   )
 
   /**
@@ -300,6 +390,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value: StoreValue = {
     loading,
+    loadError,
+    reload,
     lang,
     t: dict(lang),
     snapshot: effective,
@@ -319,6 +411,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     awayGap,
     rhythmDays,
     points,
+    semester,
+    reviews,
+    reviewSet,
+    reviewOffered,
+    completeReview,
+    redeem,
     setLang,
     setPurpose,
     setProfile,

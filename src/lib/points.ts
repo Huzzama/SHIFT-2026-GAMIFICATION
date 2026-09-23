@@ -1,35 +1,37 @@
 /**
- * FARO Points - a configurable layer over real actions, not a currency yet.
+ * FARO Points - a configurable layer over real actions.
  *
- * There is no hard-coded conversion rate anywhere below. Every value that
- * decides how many points something is worth lives in `pointsConfig`, so it
- * can be tuned - or replaced by an institution's own economics - without
- * touching the code that awards points. `REWARD_REDEMPTION_RATE` is not used
- * yet: the catalog and redemption flow are deliberately deferred, and this is
- * only the config layer they will read from.
+ * There is no hard-coded amount anywhere below. Every value that decides how
+ * many points something is worth lives in `pointsConfig`, so it can be tuned
+ * - or replaced by an institution's own economics - without touching the
+ * code that awards points. What points are worth in pesos lives in
+ * `lib/rewards.ts`.
  *
- * Points come from things a student actually did (`sessions`), never from
- * opening the app or clicking around - that is the same "no badge spam" rule
- * the achievements system holds to.
+ * The scale is calibrated to a semester, not to a course: one course
+ * finished end to end is worth roughly 2,300-2,800 points, and a semester of
+ * about four courses reaches the 10,000-point, $200 MXN reward. See
+ * `lib/rewards.ts` for the goal and the catalog.
+ *
+ * Points come from things a student actually did - an activity finished (in
+ * Canvas or in FARO), a module closed, a rhythm kept, a return after time
+ * away, a set of review cards completed - never from opening the app or
+ * clicking around. That is the same "no badge spam" rule the achievements
+ * system holds to.
  */
 import { frictionRules } from './friction'
-import type { Journey, StudySession } from '@/types'
+import type { Journey, ReviewRecord, StudySession } from '@/types'
 
 export const pointsConfig = {
-  /** Points for completing one step (one FARO study session). */
-  POINTS_PER_ACTIVITY: 10,
+  /** Points for each completed activity on the route (Canvas submission or a step finished in FARO). */
+  POINTS_PER_ACTIVITY: 50,
   /** Bonus for finishing every step in a module. */
-  POINTS_PER_MODULE: 50,
+  POINTS_PER_MODULE: 250,
   /** Bonus per Learning Rhythm milestone (see `rhythmMilestoneEvery` below). */
-  STREAK_BONUS: 5,
+  STREAK_BONUS: 25,
   /** One-time bonus for returning and completing a step after a real gap. */
-  COMEBACK_BONUS: 25,
-  /**
-   * Points needed per redemption unit in a future rewards catalog. Not read
-   * anywhere yet - the catalog itself is a later phase - but it lives here so
-   * that phase starts from a configurable rate instead of inventing one.
-   */
-  REWARD_REDEMPTION_RATE: 100,
+  COMEBACK_BONUS: 125,
+  /** For finishing a set of review cards - finishing, not getting them right first time. */
+  REVIEW_SET_BONUS: 75,
 }
 
 /** Award a rhythm bonus every N consecutive active days. */
@@ -37,6 +39,7 @@ const rhythmMilestoneEvery = 3
 
 export interface PointsBreakdown {
   total: number
+  /** Earned in this course. Previous courses of the semester are added in `lib/rewards.ts`. */
   activityCount: number
   fromActivities: number
   moduleCount: number
@@ -47,6 +50,10 @@ export interface PointsBreakdown {
   fromComebacks: number
   /** Earned in Community: useful answers and completed study rooms. */
   fromCommunity: number
+  reviewSets: number
+  fromReviews: number
+  /** Points earned in the last 7 days through actions taken in FARO. */
+  thisWeek: number
 }
 
 function modulesCompleted(journey: Journey | null): number {
@@ -60,15 +67,22 @@ function modulesCompleted(journey: Journey | null): number {
   return [...byModule.values()].filter(Boolean).length
 }
 
+const WEEK = 7 * 24 * 60 * 60 * 1000
+
 export function computePoints({
   sessions,
   journey,
   rhythmDays,
   awayGap,
   community = 0,
+  reviews = [],
+  now = Date.now(),
 }: {
   sessions: StudySession[]
   journey: Journey | null
+  /** Finished review-card sets. */
+  reviews?: ReviewRecord[]
+  now?: number
   /** Consecutive active days, from `lib/rhythm.ts`. */
   rhythmDays: number
   /** Days away when this visit started - the same value the friction engine uses. */
@@ -80,7 +94,11 @@ export function computePoints({
    */
   community?: number
 }): PointsBreakdown {
-  const activityCount = sessions.length
+  // Every completed activity counts, whether it was submitted in Canvas
+  // before FARO existed or finished inside FARO today: both are real work.
+  const activityCount = journey
+    ? journey.milestones.filter((m) => m.status === 'completed').length
+    : sessions.length
   const fromActivities = activityCount * pointsConfig.POINTS_PER_ACTIVITY
 
   const moduleCount = modulesCompleted(journey)
@@ -91,11 +109,23 @@ export function computePoints({
 
   // A real comeback: the student was away long enough to count as friction,
   // and did at least one thing since. Awarded once per visit, not per step.
-  const comebackEarned = activityCount > 0 && awayGap >= frictionRules.frictionDays
+  const comebackEarned = sessions.length > 0 && awayGap >= frictionRules.frictionDays
   const fromComebacks = comebackEarned ? pointsConfig.COMEBACK_BONUS : 0
 
+  const reviewSets = reviews.length
+  const fromReviews = reviewSets * pointsConfig.REVIEW_SET_BONUS
+
+  // "This week" is what FARO saw happen: steps finished here, review sets,
+  // and the comeback bonus if it was earned by one of them.
+  const recent = (iso: string) => now - new Date(iso).getTime() <= WEEK
+  const recentSessions = sessions.filter((s) => recent(s.at)).length
+  const thisWeek =
+    recentSessions * pointsConfig.POINTS_PER_ACTIVITY +
+    reviews.filter((r) => recent(r.at)).length * pointsConfig.REVIEW_SET_BONUS +
+    (comebackEarned && recentSessions > 0 ? pointsConfig.COMEBACK_BONUS : 0)
+
   return {
-    total: fromActivities + fromModules + fromRhythm + fromComebacks + community,
+    total: fromActivities + fromModules + fromRhythm + fromComebacks + fromReviews + community,
     activityCount,
     fromActivities,
     moduleCount,
@@ -105,5 +135,8 @@ export function computePoints({
     comebackEarned,
     fromComebacks,
     fromCommunity: community,
+    reviewSets,
+    fromReviews,
+    thisWeek,
   }
 }

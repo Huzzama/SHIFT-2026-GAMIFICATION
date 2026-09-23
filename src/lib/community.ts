@@ -129,9 +129,9 @@ export const missionComplete = (m: CommunityMission, mine: number) =>
  */
 export const communityPointsConfig = {
   /** Per peer who marked one of your answers useful. */
-  POINTS_PER_HELPFUL_MARK: 5,
+  POINTS_PER_HELPFUL_MARK: 25,
   /** For finishing a study-room session, not for joining one. */
-  POINTS_PER_COMPLETED_ROOM: 20,
+  POINTS_PER_COMPLETED_ROOM: 100,
 }
 
 export function communityPoints(state: {

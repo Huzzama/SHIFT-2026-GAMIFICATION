@@ -34,7 +34,7 @@ export interface CanvasAssignment {
   name: string
   due_at: string | null
   points_possible: number
-  /** Minutes. Not a Canvas field - FARO estimates it; see `data/canvas.mock.ts`. */
+  /** Minutes. Not a Canvas field - FARO estimates it; see `data/canvas/fixtures.ts`. */
   estimated_minutes: number
   submission: CanvasSubmission | null
 }
@@ -479,4 +479,50 @@ export interface MentorContext {
   friction_state: FrictionState
   style: MentorStyle
   language: Lang
+}
+
+/* ---------------------------------------------------------- review cards */
+
+/**
+ * One reconnection question.
+ *
+ * Bilingual on purpose: these are FARO's own cards (in production, written by
+ * the instructor or generated from the module's content), not Canvas quiz
+ * questions - a student token cannot read a quiz's question bank, and a
+ * reconnection card must never be confused with a graded quiz.
+ */
+export interface ReviewQuestion {
+  id: string
+  moduleId: number
+  prompt: Record<Lang, string>
+  options: Record<Lang, string>[]
+  /** Index into `options`. */
+  correct: number
+  /** Shown after a wrong answer, and after the right one. Explains, never scolds. */
+  explain: Record<Lang, string>
+}
+
+/** A finished set of review cards. What FARO records - never a grade. */
+export interface ReviewRecord {
+  id: string
+  at: string
+  questionIds: string[]
+  /** How many were answered right on the first try. Informational only. */
+  firstTry: number
+}
+
+/* --------------------------------------------------------------- rewards */
+
+export interface RewardTier {
+  id: string
+  /** Value in Mexican pesos. Simulated in the prototype. */
+  mxn: number
+  points: number
+}
+
+/** A redemption. One per semester, by design. */
+export interface Redemption {
+  tierId: string
+  mxn: number
+  at: string
 }
