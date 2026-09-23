@@ -1,0 +1,21 @@
+{
+  "name": "faro-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "FARO backend. Holds the Canvas token and serves the FARO API; the extension never talks to Canvas directly.",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "dev": "node --watch src/index.ts",
+    "start": "node src/index.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node test/e2e.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.8.2"
+  }
+}

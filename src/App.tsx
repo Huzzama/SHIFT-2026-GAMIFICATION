@@ -43,7 +43,7 @@ const TABS: { id: Tab; icon: IconName }[] = [
 ]
 
 export default function App() {
-  const { loading, purpose, friction, setLifeState, t } = useStore()
+  const { loading, loadError, reload, purpose, friction, setLifeState, t } = useStore()
   const [view, setView] = useState<View>('home')
   const [profileAuthorId, setProfileAuthorId] = useState('me')
 
@@ -63,6 +63,28 @@ export default function App() {
         <div className="main">
           <div className="app__body">
             <p className="muted">{t.shell.loading}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // The backend could not answer. Say so and offer a retry; never render a
+  // course out of nothing.
+  if (loadError) {
+    return (
+      <div className="shell">
+        <div className="main">
+          <div className="app__body">
+            <div className="card">
+              <p className="muted" style={{ margin: 0, lineHeight: 1.55 }}>{t.shell.loadError}</p>
+              <code className="muted" style={{ display: 'block', margin: '10px 0 14px', fontSize: 'var(--text-xs)' }}>
+                {loadError}
+              </code>
+              <button className="btn" onClick={reload}>
+                {t.shell.retry}
+              </button>
+            </div>
           </div>
         </div>
       </div>

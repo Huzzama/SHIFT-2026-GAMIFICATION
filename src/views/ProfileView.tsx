@@ -11,6 +11,7 @@
  * and this screen does not add it back in through the side door.
  */
 import { useMemo, useRef, useState } from 'react'
+import { CanvasPanel } from '@/components/CanvasPanel'
 import { Icon } from '@/components/Icon'
 import { mockAuthors } from '@/data/community.mock'
 import { communityRecognitionState, evaluateCommunityAchievements } from '@/lib/community'
@@ -247,6 +248,11 @@ export function ProfileView({ authorId, onBack }: { authorId: string; onBack: ()
             </button>
           </div>
         </div>
+
+        {/* Where the course data actually comes from. Shown next to the
+            institutional account because that is the question it answers:
+            what is FARO connected to, and what can it touch. */}
+        <CanvasPanel t={t} />
 
         <div className="card">
           <div className="row row--between">

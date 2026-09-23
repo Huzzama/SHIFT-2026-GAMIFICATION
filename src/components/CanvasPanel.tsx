@@ -15,7 +15,8 @@ import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
 import type { Dict } from '@/i18n'
 import { endpoints, ltiScopes } from '@/data/canvas/endpoints'
-import { canvasConfig, launchContext } from '@/data/canvas/config'
+import { canvasConfig, currentLaunch, onLaunch, type LaunchContext } from '@/data/canvas/config'
+import { integrationStatus, type IntegrationStatus } from '@/data/canvas/status'
 import { canvasLog, type CanvasRequestRecord } from '@/data/canvas/transport'
 
 const shortTime = (iso: string) => new Date(iso).toLocaleTimeString()
@@ -26,17 +27,29 @@ const cleanPath = (p: string) => p.split('?')[0]
 export function CanvasPanel({ t }: { t: Dict }) {
   const c = t.profile.canvas
   const [records, setRecords] = useState<CanvasRequestRecord[]>(canvasLog.all())
+  const [launch, setLaunch] = useState<LaunchContext | null>(currentLaunch())
+  const [status, setStatus] = useState<IntegrationStatus>(integrationStatus.get())
   const [open, setOpen] = useState(false)
 
   useEffect(() => canvasLog.subscribe(setRecords), [])
+  useEffect(() => onLaunch(setLaunch), [])
+  useEffect(() => integrationStatus.subscribe(setStatus), [])
 
   const simulated = canvasConfig.mode === 'mock'
+  const courseId = launch?.courseId ?? 0
   const paths = [
-    endpoints.course(launchContext.courseId),
-    endpoints.modules(launchContext.courseId),
-    endpoints.assignments(launchContext.courseId),
-    endpoints.userActivity(launchContext.courseId, launchContext.userId),
+    endpoints.course(courseId),
+    endpoints.modules(courseId),
+    endpoints.assignments(courseId),
+    endpoints.userActivity(courseId, launch?.userId ?? 'self'),
   ].map(cleanPath)
+  const backendHost = (() => {
+    try {
+      return new URL(canvasConfig.apiUrl).host
+    } catch {
+      return canvasConfig.apiUrl
+    }
+  })()
 
   return (
     <div className="card cv-panel">
@@ -48,7 +61,11 @@ export function CanvasPanel({ t }: { t: Dict }) {
           <div>
             <div className="eyebrow">{c.title}</div>
             <div className="cv-panel__course">
-              {c.course(launchContext.courseId)}
+              {launch
+                ? simulated
+                  ? c.course(launch.courseId)
+                  : c.courseLive(launch.courseId, launch.courseName ?? '')
+                : c.courseResolving}
             </div>
           </div>
         </div>
@@ -60,6 +77,14 @@ export function CanvasPanel({ t }: { t: Dict }) {
       <p className="muted" style={{ margin: '12px 0 0', lineHeight: 1.55 }}>
         {simulated ? c.bodyMock : c.bodyLive}
       </p>
+
+      {!simulated && (
+        <p className="cm-note">
+          {c.backend(backendHost)} {launch && !launch.verified ? c.launchUnverified : ''}
+        </p>
+      )}
+
+      {status.activityFallback && <p className="cm-note">{c.activityFallback}</p>}
 
       {/* What FARO calls ------------------------------------------------- */}
       <div className="cv-section">

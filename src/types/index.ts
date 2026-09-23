@@ -34,7 +34,7 @@ export interface CanvasAssignment {
   name: string
   due_at: string | null
   points_possible: number
-  /** Minutes. Not a Canvas field - FARO estimates it; see `data/canvas.mock.ts`. */
+  /** Minutes. Not a Canvas field - FARO estimates it; see `data/canvas/fixtures.ts`. */
   estimated_minutes: number
   submission: CanvasSubmission | null
 }

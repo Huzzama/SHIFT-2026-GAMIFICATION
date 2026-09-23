@@ -3,14 +3,14 @@
  *
  * Two implementations behind one interface:
  *
- *  - `HttpCanvasTransport` is the real one. It sends the bearer token,
- *    follows Canvas's `Link` header pagination, and is what runs against an
- *    institutional Canvas. It is not exercised in the prototype because
- *    there is no Canvas to call, but it is the code that would run, not a
- *    sketch of it.
- *  - `MockCanvasTransport` answers the same paths from fixtures, with the
- *    same pagination behaviour and a little latency. Swapping one for the
- *    other changes one line in `config.ts` and nothing above it.
+ *  - `BackendCanvasTransport` is the real one. It sends the Canvas path to
+ *    the FARO backend (`server/`), which checks it against its allow list,
+ *    attaches the institutional token, follows Canvas's pagination and
+ *    returns the merged JSON. The extension holds no credential and sends
+ *    none: there is no `Authorization` header in this file, on purpose.
+ *  - `MockCanvasTransport` answers the same paths from fixtures, with a
+ *    little latency. Swapping one for the other is a build-time variable
+ *    (`VITE_CANVAS_MODE`) and changes nothing above this layer.
  *
  * Every request either one makes goes through `logRequest`, and the Profile
  * screen renders that log. That matters more than it looks: it is the
@@ -65,58 +65,45 @@ export interface CanvasTransport {
 
 /* ------------------------------------------------------------------ real */
 
-/**
- * Parses Canvas's `Link` header to find the next page.
- *
- * Canvas returns `<https://…/modules?page=2>; rel="next", <…>; rel="last"`.
- * Following `rel="next"` is the documented way to page; guessing `?page=n+1`
- * is not, and breaks on endpoints that use bookmark cursors.
- */
-export function nextPageUrl(linkHeader: string | null): string | null {
-  if (!linkHeader) return null
-  for (const part of linkHeader.split(',')) {
-    const [urlPart, relPart] = part.split(';')
-    if (relPart && relPart.includes('rel="next"')) {
-      return urlPart.trim().replace(/^<|>$/g, '')
-    }
+/** A non-2xx answer from the backend (or from Canvas, passed through it). */
+export class CanvasHttpError extends Error {
+  readonly status: number
+  readonly code: string
+
+  constructor(status: number, code: string, path: string) {
+    super(`FARO backend ${status} (${code}) on ${path.split('?')[0]}`)
+    this.status = status
+    this.code = code
   }
-  return null
 }
 
-export class HttpCanvasTransport implements CanvasTransport {
+export class BackendCanvasTransport implements CanvasTransport {
   readonly mode = 'http' as const
+  private readonly apiUrl: string
 
-  constructor(private readonly config: CanvasConfig) {}
+  constructor(config: CanvasConfig) {
+    this.apiUrl = config.apiUrl
+  }
 
   async get<T>(path: string): Promise<T> {
     const started = performance.now()
-    let url: string | null = `${this.config.baseUrl}${path}`
-    let merged: unknown[] | null = null
-    let single: unknown = null
     let status = 0
-
     try {
-      while (url) {
-        const res: Response = await fetch(url, {
-          headers: {
-            Authorization: `Bearer ${this.config.accessToken}`,
-            Accept: 'application/json+canvas-string-ids',
-          },
-        })
-        status = res.status
-        if (!res.ok) throw new Error(`Canvas ${res.status} on ${path}`)
-
-        const body: unknown = await res.json()
-        if (Array.isArray(body)) {
-          merged = merged ? [...merged, ...body] : body
-          url = nextPageUrl(res.headers.get('Link'))
-        } else {
-          single = body
-          url = null
+      // The backend paginates; one round trip here is the whole answer.
+      const res = await fetch(`${this.apiUrl}/canvas${path}`, {
+        headers: { Accept: 'application/json' },
+      })
+      status = res.status
+      if (!res.ok) {
+        let code = 'error'
+        try {
+          code = String(((await res.json()) as { error?: string }).error ?? code)
+        } catch {
+          /* body was not JSON; keep the generic code */
         }
+        throw new CanvasHttpError(res.status, code, path)
       }
-
-      const data = (merged ?? single) as T
+      const data = (await res.json()) as T
       logRequest({
         at: new Date().toISOString(),
         method: 'GET',
@@ -124,7 +111,7 @@ export class HttpCanvasTransport implements CanvasTransport {
         mode: 'http',
         status,
         ms: Math.round(performance.now() - started),
-        items: merged?.length,
+        items: Array.isArray(data) ? data.length : undefined,
       })
       return data
     } catch (err) {

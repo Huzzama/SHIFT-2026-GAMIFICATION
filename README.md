@@ -3,11 +3,12 @@
 **Focus. Advance. Reward. Own.**
 Hard to quit. Easy to return. We don't gamify the course — we gamify persistence.
 
-A Canvas LMS companion for adult learners, built as a Manifest V3 side panel. It
-runs entirely on mock Canvas data, so it can be demoed with no backend, no Canvas
-credentials and no API keys.
+A Canvas LMS companion for adult learners, built as a Manifest V3 side panel.
+It runs in two modes: **mock** (fixtures answer the real Canvas API paths, no
+backend needed — the default) and **http** (a small backend in `server/` holds
+the Canvas token and forwards only allow-listed, read-only paths).
 
-## Run it
+## Run it (mock mode)
 
 ```bash
 npm install
@@ -17,6 +18,26 @@ npm run build      # produces dist/ as a Manifest V3 extension
 
 Load as an extension: `chrome://extensions` → enable Developer mode →
 **Load unpacked** → select `dist/`. Click the FARO icon to open the side panel.
+
+## Run it against a real Canvas (http mode)
+
+```bash
+cd server
+cp .env.example .env            # fill CANVAS_API_URL, CANVAS_ACCESS_TOKEN, FARO_COURSE_ID
+npm start                       # Node 22.18+; no dependencies to install
+npm test                        # 20 checks against a fake Canvas with real pagination
+```
+
+Then in the project root create `.env.local` with `VITE_CANVAS_MODE=http` and
+run `npm run dev` or `npm run build`. The extension never sees the token; see
+`docs/03-documentacion-tecnica/06-implementacion-cuenta-gratuita.md` for the
+step-by-step against a free Instructure account.
+
+## Documentation
+
+Three books in `docs/`, in Spanish and English (Markdown + PDF): security &
+data handling, user guide, technical documentation & Canvas implementation.
+See `docs/README.md`.
 
 ## Screens
 
@@ -88,7 +109,10 @@ single component — deferred for now, per this session's build-order choice.
 ```
 src/
   i18n/       es.ts (source of truth) · en.ts (typed against it) · index.ts
-  data/       canvas.mock.ts, client.ts     ← swap MockFaroClient for HttpFaroClient
+  data/       client.ts                     ← the seam: CourseSnapshot in, nothing else
+              canvas/  endpoints · raw · transport · fixtures · client · config
+                       real Canvas REST paths and mapping; mock vs http is one value
+              community.mock.ts
   lib/        friction, journey, lifeHappened, achievements, sessions, mentorContext,
               points (FARO Points config + mock balance), rhythm (Learning Rhythm)
   services/   mentor.ts                     ← LocalMentorService | HttpMentorService
@@ -100,9 +124,14 @@ src/
 
 Two seams matter, because they are where the real system plugs in:
 
-- **`data/client.ts`** — the only place course data is fetched. Replacing
-  `MockFaroClient` with an HTTP client pointed at the FARO backend changes
-  nothing above it.
+- **`data/client.ts`** — the only place course data is fetched. Below it,
+  `data/canvas/` speaks the actual Canvas REST API: the documented paths, the
+  response shapes Canvas really sends, `Link`-header pagination, and the
+  mapping from Canvas's model to FARO's. In the prototype a fixture transport
+  answers those requests instead of an institution; switching `canvasMode` in
+  `data/canvas/config.ts` to `'http'` points the same code at a live Canvas.
+  Every call is a GET, and the Profile screen renders the live request log so
+  the integration can be checked rather than taken on trust.
 - **`lib/mentorContext.ts`** — the privacy boundary. If a field is not built
   there, the mentor never sees it. No names, no emails, no Canvas ids, no
   dropout classification. (Language *is* sent: the model should answer in it.)

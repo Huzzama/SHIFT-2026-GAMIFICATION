@@ -60,6 +60,10 @@ const EMPTY_PROFILE: Profile = {
 
 interface StoreValue {
   loading: boolean
+  /** Set when the course snapshot could not be fetched (backend down, token rejected). */
+  loadError: string | null
+  /** Try the snapshot again after a load error. */
+  reload: () => void
   lang: Lang
   /** The active dictionary. Views read copy from here, never from literals. */
   t: Dict
@@ -100,6 +104,8 @@ const StoreContext = createContext<StoreValue | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [reloadTick, setReloadTick] = useState(0)
   const [lang, setLangState] = useState<Lang>(detectLang)
   const [snapshot, setSnapshot] = useState<CourseSnapshot | null>(null)
   const [purpose, setPurposeState] = useState<Purpose | null>(null)
@@ -132,14 +138,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (typeof pz === 'boolean') setPausedState(pz)
       if (pr) setProfileState(pr)
 
-      const snap = await faroClient.getCourseSnapshot()
-      if (!alive) return
-      setSnapshot(snap)
+      try {
+        const snap = await faroClient.getCourseSnapshot()
+        if (!alive) return
+        setSnapshot(snap)
+        setLoadError(null)
+      } catch (err) {
+        // The message is for the developer console; the UI shows its own copy.
+        console.error('[FARO] course snapshot failed', err)
+        if (!alive) return
+        setLoadError(err instanceof Error ? err.message : 'unknown')
+      }
       setLoading(false)
     })()
     return () => {
       alive = false
     }
+  }, [reloadTick])
+
+  const reload = useCallback(() => {
+    setLoading(true)
+    setLoadError(null)
+    setReloadTick((n) => n + 1)
   }, [])
 
   const setLang = useCallback((l: Lang) => {
@@ -300,6 +320,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value: StoreValue = {
     loading,
+    loadError,
+    reload,
     lang,
     t: dict(lang),
     snapshot: effective,

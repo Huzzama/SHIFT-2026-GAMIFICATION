@@ -4,7 +4,9 @@
  * Keeping the paths in one file is not tidiness — it is the audit surface. A
  * Canvas administrator reviewing this integration can read this file in
  * thirty seconds and know exactly what FARO touches, without trusting a
- * description of it. Anything not listed here, FARO does not call.
+ * description of it. Anything not listed here, FARO does not call — and the
+ * backend enforces the same list independently (`server/src/allowlist.ts`),
+ * so a modified extension cannot widen it.
  *
  * Two absences are deliberate and load-bearing:
  *
@@ -70,6 +72,14 @@ export const endpoints = {
    */
   activeCourses: () =>
     `/api/v1/courses?enrollment_state=active&per_page=${PER_PAGE}`,
+
+  /**
+   * The token owner's numeric id. Called by the backend only, once, at
+   * launch resolution in the pilot (no LTI launch to read `sub` from). The
+   * response also carries the person's name and avatar; the backend keeps
+   * the id and discards the rest. See `server/src/routes/launch.ts`.
+   */
+  self: () => '/api/v1/users/self',
 } as const
 
 /**
@@ -84,6 +94,7 @@ export const requiredScopes = [
   'url:GET|/api/v1/courses/:course_id/assignments',
   'url:GET|/api/v1/courses/:course_id/analytics/users/:student_id/activity',
   'url:GET|/api/v1/courses',
+  'url:GET|/api/v1/users/self',
 ] as const
 
 /**

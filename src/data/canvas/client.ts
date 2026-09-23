@@ -20,17 +20,25 @@
  *  3. **Estimated minutes are FARO's, and labelled as such.** Canvas has no
  *     such field. It is looked up from FARO's own table; an assignment with
  *     no estimate gets a conservative default rather than a fabricated one.
+ *
+ * One fallback, also named: a student account is often not allowed to read
+ * the analytics endpoint (Canvas answers 401/403). When that happens FARO
+ * does not invent activity — it derives "last activity" from the dates of
+ * the student's own submissions, which are always visible to them, and the
+ * Profile panel says the fallback is in use.
  */
 import { endpoints } from './endpoints'
 import { estimatedMinutes, rawActivity, rawCourse, rawAssignments, rawModules, studyProfile } from './fixtures'
+import { integrationStatus } from './status'
 import type { RawAssignment, RawCourse, RawModule, RawUserActivity } from './raw'
 import {
-  HttpCanvasTransport,
+  BackendCanvasTransport,
+  CanvasHttpError,
   MockCanvasTransport,
   type CanvasTransport,
   type FixtureRoute,
 } from './transport'
-import { canvasConfig, launchContext, type LaunchContext } from './config'
+import { canvasConfig, resolveLaunch, type LaunchContext } from './config'
 import type { CourseSnapshot, FaroClient } from '../client'
 import type { CanvasActivityEvent, CanvasAssignment, CanvasModule } from '@/types'
 
@@ -46,10 +54,10 @@ const DEFAULT_MINUTES = 20
 /* ------------------------------------------------------------- mapping */
 
 /** Canvas module state maps to ours one-for-one; absent state means the caller is not a student. */
-function mapModule(m: RawModule, completedByModule: Map<number, number>): CanvasModule {
+function mapModule(m: RawModule, courseId: number, completedByModule: Map<number, number>): CanvasModule {
   return {
     id: m.id,
-    course_id: rawCourse.id,
+    course_id: courseId,
     name: m.name,
     position: m.position,
     state: m.state ?? 'unlocked',
@@ -58,7 +66,10 @@ function mapModule(m: RawModule, completedByModule: Map<number, number>): Canvas
   }
 }
 
-function mapAssignment(a: RawAssignment, moduleId: number): CanvasAssignment {
+/** Where the minutes-per-activity estimate comes from. Fixtures have a table; a live course does not yet. */
+export type EstimateLookup = (assignmentId: number) => number | undefined
+
+function mapAssignment(a: RawAssignment, moduleId: number, estimate: EstimateLookup): CanvasAssignment {
   const sub = a.submission
   const submitted = Boolean(sub && sub.workflow_state !== 'unsubmitted' && sub.submitted_at)
 
@@ -69,7 +80,7 @@ function mapAssignment(a: RawAssignment, moduleId: number): CanvasAssignment {
     name: a.name,
     due_at: a.due_at,
     points_possible: a.points_possible ?? 0,
-    estimated_minutes: estimatedMinutes[a.id] ?? DEFAULT_MINUTES,
+    estimated_minutes: estimate(a.id) ?? DEFAULT_MINUTES,
     submission:
       submitted && sub
         ? {
@@ -107,16 +118,32 @@ function mapActivity(activity: RawUserActivity, courseId: number): CanvasActivit
   )
 }
 
+/**
+ * What a student can always see about themselves: when they submitted.
+ * Used as activity when the analytics endpoint is closed to them.
+ */
+function activityFromSubmissions(assignments: RawAssignment[], courseId: number): CanvasActivityEvent[] {
+  return assignments
+    .filter((a) => a.submission?.submitted_at)
+    .map((a) => ({ course_id: courseId, at: a.submission?.submitted_at as string, kind: 'submission' as const }))
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+}
+
 /* -------------------------------------------------------------- client */
 
 export class CanvasFaroClient implements FaroClient {
-  constructor(
-    private readonly transport: CanvasTransport,
-    private readonly launch: LaunchContext,
-  ) {}
+  private readonly transport: CanvasTransport
+  private readonly launch: () => Promise<LaunchContext>
+  private readonly estimate: EstimateLookup
+
+  constructor(transport: CanvasTransport, launch: () => Promise<LaunchContext>, estimate: EstimateLookup) {
+    this.transport = transport
+    this.launch = launch
+    this.estimate = estimate
+  }
 
   async getCourseSnapshot(): Promise<CourseSnapshot> {
-    const { courseId, userId } = this.launch
+    const { courseId, userId } = await this.launch()
 
     // Four calls, issued together. Canvas has no combined endpoint for this,
     // and serialising them would make every FARO open four round trips long.
@@ -124,7 +151,15 @@ export class CanvasFaroClient implements FaroClient {
       this.transport.get<RawCourse>(endpoints.course(courseId)),
       this.transport.get<RawModule[]>(endpoints.modules(courseId)),
       this.transport.get<RawAssignment[]>(endpoints.assignments(courseId)),
-      this.transport.get<RawUserActivity>(endpoints.userActivity(courseId, userId)),
+      this.transport.get<RawUserActivity>(endpoints.userActivity(courseId, userId)).catch((err: unknown) => {
+        // Not allowed to read analytics: fall back, and say so. Anything
+        // else is a real failure and must surface.
+        if (err instanceof CanvasHttpError && (err.status === 401 || err.status === 403)) {
+          integrationStatus.set({ activityFallback: true })
+          return null
+        }
+        throw err
+      }),
     ])
 
     // Which module each assignment lives in — read off the module items,
@@ -156,10 +191,13 @@ export class CanvasFaroClient implements FaroClient {
         start_at: course.start_at,
         end_at: course.end_at,
       },
-      modules: modules.map((m) => mapModule(m, completedByModule)),
-      assignments: onRoute.map((a) => mapAssignment(a, moduleOfAssignment.get(a.id) as number)),
-      activity: mapActivity(activity, courseId),
-      profile: studyProfile,
+      modules: modules.map((m) => mapModule(m, course.id, completedByModule)),
+      assignments: onRoute.map((a) => mapAssignment(a, moduleOfAssignment.get(a.id) as number, this.estimate)),
+      activity: activity ? mapActivity(activity, courseId) : activityFromSubmissions(onRoute, courseId),
+      // The study profile is measured by the backend in production. Until
+      // it exists, only the fixture scenario carries one; a live course is
+      // honest about not knowing the student's rhythm yet.
+      profile: this.transport.mode === 'mock' ? studyProfile : undefined,
     }
   }
 }
@@ -181,9 +219,11 @@ export const fixtureRoutes: FixtureRoute[] = [
 ]
 
 export function createCanvasClient(): CanvasFaroClient {
-  const transport: CanvasTransport =
-    canvasConfig.mode === 'http'
-      ? new HttpCanvasTransport(canvasConfig)
-      : new MockCanvasTransport(fixtureRoutes)
-  return new CanvasFaroClient(transport, launchContext)
+  if (canvasConfig.mode === 'http') {
+    // The fixture estimate table is keyed by fixture ids; against a real
+    // course it would match by coincidence. Every live activity gets the
+    // stated default until estimates come from the course configuration.
+    return new CanvasFaroClient(new BackendCanvasTransport(canvasConfig), resolveLaunch, () => undefined)
+  }
+  return new CanvasFaroClient(new MockCanvasTransport(fixtureRoutes), resolveLaunch, (id) => estimatedMinutes[id])
 }

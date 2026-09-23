@@ -1,23 +1,24 @@
 /**
  * The one place the rest of the app talks to for course data.
  *
- * Today it resolves mock fixtures. Tomorrow `HttpFaroClient` calls the FARO
- * backend, which calls Canvas. Views never learn the difference.
+ * This is the seam. Above it, every screen works on `CourseSnapshot` and has
+ * no idea where it came from. Below it sits `data/canvas/`, which speaks the
+ * real Canvas REST API: real paths, real response shapes, real pagination,
+ * real mapping. In the prototype those requests are answered by fixtures
+ * instead of an institution — see `data/canvas/config.ts`, where changing one
+ * value points the same code at a live Canvas.
+ *
+ * Keeping the interface this narrow is what makes that swap a configuration
+ * change rather than a rewrite.
  */
 import type {
   CanvasActivityEvent,
   CanvasAssignment,
   CanvasCourse,
   CanvasModule,
+  StudyProfile,
 } from '@/types'
-import type { StudyProfile } from '@/types'
-import {
-  mockActivity,
-  mockAssignments,
-  mockCourse,
-  mockModules,
-  mockStudyProfile,
-} from './canvas.mock'
+import { createCanvasClient } from './canvas/client'
 
 export interface CourseSnapshot {
   course: CanvasCourse
@@ -36,20 +37,11 @@ export interface FaroClient {
   getCourseSnapshot(): Promise<CourseSnapshot>
 }
 
-/** Small delay so the UI's cached-first rendering is honest, not accidental. */
-const latency = (ms = 120) => new Promise((r) => setTimeout(r, ms))
-
-export class MockFaroClient implements FaroClient {
-  async getCourseSnapshot(): Promise<CourseSnapshot> {
-    await latency()
-    return {
-      course: mockCourse,
-      modules: mockModules,
-      assignments: mockAssignments,
-      activity: mockActivity,
-      profile: mockStudyProfile,
-    }
-  }
-}
-
-export const faroClient: FaroClient = new MockFaroClient()
+/**
+ * The client the app uses.
+ *
+ * Built from the Canvas configuration, so it is the Canvas client in both
+ * modes — the prototype does not run a different code path from production,
+ * it runs the same one against a different transport.
+ */
+export const faroClient: FaroClient = createCanvasClient()
