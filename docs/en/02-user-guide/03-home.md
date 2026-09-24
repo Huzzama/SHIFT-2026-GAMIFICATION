@@ -32,17 +32,33 @@ The reason changes by case. If the step is overdue: *"This step reopens the rout
 
 **Start this step** marks it as completed and moves everything at once: progress, momentum, journey, points and badges. **Ask FARO** opens the Mentor.
 
-## 4. Community card
+## 4. How much time do you have?
+
+Four options: **5 / 10 / 20 / 30+ min** (30+ plans 45 minutes). Pick one and FARO builds a session that fits that time, with the minutes for each part, and a **Start** button. The rules:
+
+1. If you are coming back after an absence and review cards are available, the session opens with them: **3 review questions**, about 3 minutes.
+2. Then steps **in route order** (overdue first) while they fit. It never skips ahead to a later step just because it is shorter: a module's quiz does not come before the exercise it checks.
+3. If no step fits, it offers **"the first N min"** of the first step. A short session beats no session.
+
+The minutes are FARO's estimates (Canvas has no duration field). If nothing is open: *"Nothing on your route needs you right now."* The mentor's Focus mode and weekend plan use the same rule, so the three screens always agree.
+
+## 5. Your plan (only if you saved one)
+
+If you accepted a plan in the Mentor (**Plan my weekend → Keep this plan**), it shows here: each day with its minutes and its steps. Steps you have finished are crossed out and marked *done*. **Clear plan** removes it.
+
+## 6. Community card
 
 One line with how many people are studying your course right now. It only appears if there is someone. Opens Community.
 
-## 5. The four pillars
+## 7. The four pillars
 
 **Focus** (your purpose) · **Advance** (the journey) · **Reward** (progress) · **Own** (the mentor). They are shortcuts, not new sections.
 
-## 6. Your courses, momentum, rhythm and achievements
+## 8. Your courses, momentum, rhythm and achievements
 
 Tappable summary cards. **Momentum** carries a word instead of just the number: *strong momentum* (65% or more), *regaining momentum* (40–64%), *your progress is safe* (under 40%). That last one never says you are doing badly.
+
+**Rhythm** counts days of the week, not streaks: *"N/7 · active days this week"*. If there are none yet, it says *"Your rhythm is waiting for you"*. The day-by-day detail is in Progress.
 
 ## Safe harbour
 

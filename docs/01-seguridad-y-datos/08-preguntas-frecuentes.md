@@ -27,6 +27,9 @@ En `server/.env`, en la máquina que corre el backend, y en la memoria de ese pr
 **¿El token está en el código fuente o en GitHub?**
 No. `.env` está en `.gitignore`. El repositorio contiene `server/.env.example` con el campo vacío.
 
+**¿Dónde está la clave de Gemini?**
+Igual que el token: en `server/.env` y en la memoria del backend, y solo si la institución activa el mentor con IA. Nunca en la extensión. Viaja a Google solo en la cabecera `x-goog-api-key`, nunca en la URL, y no aparece en logs ni respuestas. Si se expone, se revoca en Google y se genera otra. Capítulo 4.8.
+
 **¿Qué pasa si el token se filtra?**
 Se revoca en Canvas en un clic, se genera otro, se reinicia el backend. El alcance del daño es lectura de lo que ese estudiante ve de sí mismo. Por eso el piloto usa solo tokens de cuentas de estudiante, nunca de docente ni de administrador. Capítulo 4.
 
@@ -35,17 +38,26 @@ En el piloto, sí, uno por participante (o un token de una cuenta de prueba). Es
 
 ## Inteligencia artificial
 
+**¿Qué modelo usa FARO?**
+Por omisión, ninguno: el mentor es local y determinista, y nada sale del dispositivo. Opcionalmente, Google Gemini (`GEMINI_MODEL`, por omisión `gemini-3.5-flash`; los nombres de modelo cambian y deben verificarse en `ai.google.dev/gemini-api/docs/models`). Se activa con `VITE_MENTOR_MODE=gemini` en la extensión y `GEMINI_API_KEY` en el backend. La pantalla del mentor siempre dice cuál de los dos responde.
+
 **¿Qué recibe el modelo de IA?**
-Once campos: nombre del curso, porcentaje de avance, siguiente actividad y su duración, meta declarada, frase de destino, minutos disponibles, impulso, estado de fricción, estilo e idioma. Está en `src/lib/mentorContext.ts`. No recibe nombre, correo, ids, calificaciones ni historial.
+Solo en modo `gemini`, y siempre a través del backend: once campos (nombre del curso, porcentaje de avance, siguiente actividad y su duración, meta declarada, frase de destino, minutos disponibles, impulso, estado de fricción, estilo e idioma), el mensaje del estudiante y los últimos 8 turnos de la conversación actual. El contexto se arma en `src/lib/mentorContext.ts` y el backend lo vuelve a filtrar en `server/src/mentor.ts`. No recibe nombre, correo, ids de Canvas, calificaciones, foto ni conversaciones anteriores.
 
 **¿El modelo puede hacer la tarea del estudiante?**
-No. Hay un filtro de peticiones del tipo "hazme el examen" que responde con una negativa y ofrece dividir la tarea, explicar el concepto o revisar el razonamiento. El filtro es igual en los cinco estilos de comunicación.
+No. Hay un filtro de peticiones del tipo "hazme el examen" que responde con una negativa y ofrece dividir la tarea, explicar el concepto o revisar el razonamiento; en modo `gemini`, el backend contesta esas peticiones sin llamar al modelo. Además, las reglas del prompt de sistema prohíben producir trabajo calificado. El filtro es igual en los cinco estilos de comunicación.
 
 **¿Hoy los datos van a un proveedor de IA?**
-No. El mentor del prototipo es local y determinista. La llamada al modelo se activará desde el backend cuando exista contrato con el proveedor y aviso de privacidad actualizado.
+Solo si se activa el modo `gemini`. Con la configuración por omisión (`VITE_MENTOR_MODE=local`), no: el mentor es local y determinista. Antes de activarlo con estudiantes reales hace falta el aviso de privacidad actualizado (capítulo 7).
 
-**¿Se usan los datos para entrenar modelos?**
-No, y el contrato con el proveedor deberá prohibirlo explícitamente antes de activar el mentor remoto.
+**¿Gemini entrena con los datos de los estudiantes?**
+No, si la clave es de un proyecto de Google Cloud con facturación activa (servicios de pago de la API de Gemini): en ese caso Google no usa los *prompts* ni las respuestas para mejorar sus productos, y solo los registra por tiempo limitado para detectar abuso y por requisitos legales. En el nivel gratuito sí los usa para mejorar productos, revisores humanos pueden leerlos y los términos piden no enviar información personal; por eso **nunca se usa el nivel gratuito con estudiantes reales**. Fuente: `ai.google.dev/gemini-api/terms`. Capítulo 7.8.
+
+**¿Qué pasa si Gemini no responde?**
+Responde el mentor local, y el estudiante lo ve: la respuesta lleva la nota *"Gemini no pudo responder en este momento, así que respondió el mentor local"*. El backend devuelve códigos claros para cada falla (`503 mentor_not_configured`, `502 mentor_key_rejected`, `502 mentor_upstream`, `502 mentor_blocked`, `504 mentor_timeout`, `429 mentor_rate_limited`) y la extensión cae al mentor local con cualquiera de ellos. El estudiante siempre recibe respuesta; su progreso no depende de Google.
+
+**¿FARO guarda las conversaciones con el mentor?**
+No. Viven en la memoria de la extensión durante la sesión. El backend no las guarda ni las registra: ni el mensaje, ni la respuesta, ni el contexto.
 
 ## Vigilancia y bienestar
 
@@ -70,10 +82,10 @@ En el piloto, en una máquina del equipo o de la institución, escuchando en `12
 El backend, ninguna. Solo Node.js. La extensión, dos: `react` y `react-dom`.
 
 **¿Cómo sé que las garantías de este libro son ciertas?**
-Ejecutando `npm test` dentro de `server/`: veinte verificaciones automáticas contra un Canvas simulado con paginación real. Y abriendo *Perfil → Canvas* en FARO: el registro de peticiones en vivo muestra cada llamada.
+Ejecutando `npm test` dentro de `server/`: treinta y seis verificaciones automáticas contra un Canvas simulado con paginación real y un Gemini simulado. Y abriendo *Perfil → Canvas* en FARO: el registro de peticiones en vivo muestra cada llamada.
 
 **¿Qué falta para producción?**
-Registro LTI 1.3 por la institución, OAuth2 por estudiante, base de datos con cifrado en reposo, mentor remoto con contrato de datos, aviso de privacidad formal y revisión de seguridad externa. Capítulo 9 tiene la lista completa.
+Registro LTI 1.3 por la institución, OAuth2 por estudiante, base de datos con cifrado en reposo, validar el mentor con Gemini contra la API real con una clave de pago de la institución, aviso de privacidad formal y revisión de seguridad externa. Capítulo 9 tiene la lista completa.
 
 **¿FARO reemplaza a Canvas?**
 No. Canvas sigue siendo la fuente de verdad académica. FARO lee de Canvas y añade una capa de acompañamiento. *No reemplazamos Canvas: lo hacemos adaptativo.*

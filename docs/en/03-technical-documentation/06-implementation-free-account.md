@@ -56,7 +56,9 @@ npm start
 You should see:
 
 ```text
-[faro-server] listening on http://127.0.0.1:3000 -> Canvas canvas.instructure.com (read-only, token in memory only)
+[faro-server] listening on http://127.0.0.1:3000
+[faro-server] Canvas: canvas.instructure.com (read-only, token in memory only)
+[faro-server] Mentor: not configured (the extension uses its local mentor)
 ```
 
 Check from another terminal:
@@ -127,3 +129,33 @@ If the `/analytics/.../activity` path shows `401` in the log and the panel shows
 | FARO does not load and the console says `CORS` | The extension's origin is not in `FARO_ALLOWED_ORIGINS` | Add `chrome-extension://<id>` and restart |
 | `ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX` | Node older than 22.18 | Update Node |
 | Modules appear with no state (all `unlocked`) | Teacher token | Use the student token |
+| `Nothing to serve: …` at start-up | `server/.env` has neither Canvas nor `GEMINI_API_KEY` | Configure at least one |
+| Every Mentor reply carries the note "Gemini could not answer…" | Backend down, no key (`503`), key rejected (`502 mentor_key_rejected`) or a model name that does not exist (`502 mentor_upstream`) | Check `/health` (`mentor` must not be `null`), the key and `GEMINI_MODEL` |
+| The Mentor footer says "Local mentor" although you configured Gemini | The extension was built without `VITE_MENTOR_MODE=gemini` | Add it to `.env.local` and restart `npm run dev` (or rebuild) |
+
+## 6.9 Turning on the Gemini mentor (optional) — 3 minutes
+
+The mentor works without this (local mentor). For Gemini to answer:
+
+1. Create a key in Google AI Studio. **With real students, only from a Google Cloud project with active billing**; the free tier is only for testing with made-up data (Book 1, chapter 7.8).
+2. Add it to `server/.env` (never to the root `.env.local`):
+
+```text
+GEMINI_API_KEY=<your key>
+GEMINI_MODEL=gemini-3.5-flash
+```
+
+   Model names change: check the current one at `ai.google.dev/gemini-api/docs/models`.
+
+3. Start the backend (`npm run dev` or `npm start` inside `server/`). The mentor line must say `Mentor: Gemini <model> (key in memory only)`. Canvas is optional: with only the key, the backend starts mentor-only and the Canvas routes answer `503 canvas_not_configured`.
+4. At the root, add to `.env.local`:
+
+```text
+VITE_MENTOR_MODE=gemini
+VITE_FARO_API_URL=http://127.0.0.1:3000
+```
+
+5. Restart `npm run dev` (Vite reads the variables at start-up).
+6. Check: the Mentor footer says *"Answers by Gemini, through FARO's server…"*, and when you type an open message the reply arrives with the violet ring on the avatar and **without** the note *"Gemini could not answer…"*. Stop the backend and type again: the local mentor must answer, with the note.
+
+This is the step the team must do with its own key: in development, the path was only verified against a fake Gemini (chapter 8.2b).

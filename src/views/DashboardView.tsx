@@ -11,9 +11,14 @@ import { CourseCard, PillarCard, StatCard } from '@/components/Cards'
 import { HeroArt } from '@/components/HeroArt'
 import { Icon } from '@/components/Icon'
 import { Wordmark } from '@/components/Wordmark'
+import { useState } from 'react'
 import { mockPresence } from '@/data/community.mock'
+import { activeDays } from '@/lib/rhythm'
+import { buildTimeSession, sessionMinutes, sessionRules } from '@/lib/timeSession'
 import { useStore } from '@/state/store'
 import type { LifeState } from '@/types'
+
+const TIME_OPTIONS = [5, 10, 20, sessionRules.OPEN_ENDED_MINUTES] as const
 
 const hour = () => new Date().getHours()
 
@@ -43,9 +48,15 @@ export function DashboardView({
     achievements,
     snapshot,
     paused,
-    rhythmDays,
+
     completeMilestone,
+    setAvailableMinutes,
+    reviewOffered,
+    week,
+    weekPlan,
+    setWeekPlan,
   } = useStore()
+  const [picked, setPicked] = useState<number | null>(null)
 
   if (!journey || !friction || !snapshot) return <p className="muted">{t.shell.loading}</p>
 
@@ -66,7 +77,18 @@ export function DashboardView({
       : friction.momentum >= 40
         ? t.home.momentumCard.building
         : t.home.momentumCard.low
-  const rhythmSub = rhythmDays > 0 ? t.home.rhythmCard.active(rhythmDays) : t.home.rhythmCard.waiting
+  const daysThisWeek = activeDays(week)
+  const rhythmSub = daysThisWeek > 0 ? t.home.rhythmCard.weekSub : t.home.rhythmCard.waiting
+
+  const tp = t.home.timePicker
+  const session = picked ? buildTimeSession(journey, picked, { reviewAvailable: reviewOffered }) : []
+  const doneIds = new Set(journey.milestones.filter((m) => m.status === 'completed').map((m) => m.id))
+  const startFirst = () => {
+    const first = session[0]
+    if (!first) return
+    if (first.kind === 'review') onOpenRecovery()
+    else completeMilestone(first.milestone, first.minutes)
+  }
 
   if (paused) {
     return (
@@ -161,6 +183,84 @@ export function DashboardView({
         </div>
       )}
 
+      {/* How much time do you have? ------------------------------------------ */}
+      <section className="timepick">
+        <div className="timepick__title">
+          <Icon name="clock" size={18} /> {tp.title}
+        </div>
+        <div className="timepick__options" role="group" aria-label={tp.title}>
+          {TIME_OPTIONS.map((m) => (
+            <button
+              key={m}
+              className={`timepick__opt${picked === m ? ' timepick__opt--on' : ''}`}
+              aria-pressed={picked === m}
+              onClick={() => {
+                setPicked(m)
+                setAvailableMinutes(m)
+              }}
+            >
+              {m === sessionRules.OPEN_ENDED_MINUTES ? tp.open : tp.option(m)}
+            </button>
+          ))}
+        </div>
+        {picked !== null &&
+          (session.length === 0 ? (
+            <p className="muted" style={{ margin: 0 }}>{tp.empty}</p>
+          ) : (
+            <div className="timepick__session">
+              <div className="timepick__head">{tp.session(sessionMinutes(session))}</div>
+              <ol className="timepick__list">
+                {session.map((item, i) => (
+                  <li key={i}>
+                    <span>
+                      {item.kind === 'review'
+                        ? tp.review
+                        : item.kind === 'partial'
+                          ? `${item.milestone.title} — ${tp.partial(item.minutes)}`
+                          : item.milestone.title}
+                    </span>
+                    <span className="timepick__min">{item.minutes} min</span>
+                  </li>
+                ))}
+              </ol>
+              <button className="btn btn--block" onClick={startFirst}>
+                {tp.start} <Icon name="arrow" size={16} />
+              </button>
+            </div>
+          ))}
+      </section>
+
+      {/* A plan accepted in the mentor ------------------------------------------ */}
+      {weekPlan && (
+        <section className="card weekplan">
+          <div className="row row--between">
+            <div className="eyebrow">
+              <Icon name="calendar" size={14} /> {t.home.weekPlan.eyebrow}
+            </div>
+            <button className="section__link" onClick={() => setWeekPlan(null)}>
+              {t.home.weekPlan.clear}
+            </button>
+          </div>
+          {weekPlan.days
+            .filter((d) => d.items.length > 0)
+            .map((d) => (
+              <div key={d.label} className="weekplan__day">
+                <div className="weekplan__label">
+                  {d.label} · {d.minutes} min
+                </div>
+                <ul>
+                  {d.items.map((it) => (
+                    <li key={it.milestoneId} className={doneIds.has(it.milestoneId) ? 'weekplan__item--done' : ''}>
+                      {it.title} <span className="muted">· {it.minutes} min</span>
+                      {doneIds.has(it.milestoneId) && <span className="weekplan__done"> · {t.home.weekPlan.done}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+        </section>
+      )}
+
       {/* Community — contextual, and only when there is someone to find ------ */}
       {mockPresence.studyingNow > 0 && (
         <button className="cm-homecard" onClick={onOpenCommunity}>
@@ -224,7 +324,7 @@ export function DashboardView({
           tone="mint"
           icon="clock"
           eyebrow={t.home.rhythmCard.label}
-          value={rhythmDays > 0 ? String(rhythmDays) : '—'}
+          value={daysThisWeek > 0 ? t.home.rhythmCard.week(daysThisWeek) : '—'}
           sub={rhythmSub}
           onClick={onOpenProgress}
         />

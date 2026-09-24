@@ -32,7 +32,7 @@ En modo *En vivo* FARO nunca habla con Canvas directamente: pasa por un servidor
 5. Recuperación
 6. FARO Mentor
 7. Comunidad
-8. Recompensas y Progreso
+8. Impacto y Progreso
 9. Perfil
 10. Reglas que FARO nunca rompe
 

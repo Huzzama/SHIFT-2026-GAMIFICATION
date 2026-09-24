@@ -68,7 +68,7 @@ This is the production path. It is designed and documented in the code; the rout
 
 **Problem it solves:** any web page open in the same browser using the FARO backend as if it were the extension.
 
-**How FARO uses it:** the backend keeps a list of allowed origins (`FARO_ALLOWED_ORIGINS`). An origin outside the list receives `403` with no data and no CORS headers. The advertised methods are only `GET, OPTIONS`.
+**How FARO uses it:** the backend keeps a list of allowed origins (`FARO_ALLOWED_ORIGINS`). An origin outside the list receives `403` with no data and no CORS headers. The advertised methods are `GET, POST, OPTIONS`: `POST` exists for `POST /api/mentor` (and for the LTI launch, which answers 501 today). Towards Canvas the backend still sends only `GET`.
 
 **[code]** `server/src/http.ts`, `corsHeaders`. **[test]** "a browser origin outside the list gets 403 and no data", "CORS preflight succeeds for an allowed origin".
 
@@ -76,9 +76,9 @@ This is the production path. It is designed and documented in the code; the rout
 
 **Problem it solves:** an extension with a bug that retries in a loop could send thousands of requests to Canvas with the institutional token, and Canvas could suspend that token.
 
-**How FARO uses it:** a per-client counter over a one-minute window (`FARO_RATE_LIMIT_PER_MINUTE`, 120 by default). Beyond it, `429` with `Retry-After`.
+**How FARO uses it:** a per-client counter over a one-minute window (`FARO_RATE_LIMIT_PER_MINUTE`, 120 by default). Beyond it, `429` with `Retry-After`. Model calls also have their own per-client cap (`FARO_MENTOR_PER_MINUTE`, 20 by default), which answers `429 mentor_rate_limited` before calling Gemini, to contain cost.
 
-**[code]** `server/src/http.ts`, `RateLimiter`. **[test]** "rate limit trips after the configured burst".
+**[code]** `server/src/http.ts`, `RateLimiter`; `server/src/routes/mentor.ts`. **[test]** "rate limit trips after the configured burst", "mentor: per-client cap answers 429 before calling the model".
 
 ## 3.8 Response headers
 

@@ -22,5 +22,5 @@ The script concatenates each book's chapters, converts them to HTML with its own
 ## Keeping them current
 
 - If a threshold changes in `src/lib/`, change chapter 3 of Book 3 and chapter 8 of Book 2, in both languages.
-- If a Canvas path is added, follow the procedure in chapter 5.8 of Book 3 (it includes updating Book 1).
+- If a Canvas path is added, follow the procedure in chapter 5.9 of Book 3 (it includes updating Book 1).
 - The **[code] [test] [pending]** marks in Book 1 must reflect the real state of the repository at every delivery.

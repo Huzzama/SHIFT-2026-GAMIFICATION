@@ -1,9 +1,9 @@
 /**
  * Entry point. `node src/index.ts` (Node 22.18+ strips the types itself).
  *
- * Reads `.env` from the `server/` directory, refuses to start without a
- * Canvas URL and token, and prints a start-up line that names the Canvas
- * host and the port - never the token.
+ * Reads `.env` from the `server/` directory, refuses to start with nothing to
+ * serve (no Canvas and no mentor), and prints a start-up line that names the
+ * Canvas host, the mentor model and the port - never a token or a key.
  */
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -29,8 +29,16 @@ async function main() {
   await app.listen(env.port, env.host)
 
   const d = describe(env)
+  console.log(`[faro-server] listening on http://${d.host}:${d.port}`)
   console.log(
-    `[faro-server] listening on http://${d.host}:${d.port} -> Canvas ${d.canvasHost} (read-only, token in memory only)`,
+    d.canvasHost
+      ? `[faro-server] Canvas: ${d.canvasHost} (read-only, token in memory only)`
+      : '[faro-server] Canvas: not configured (the extension can still run in mock mode)',
+  )
+  console.log(
+    d.mentor
+      ? `[faro-server] Mentor: Gemini ${d.mentor.model} (key in memory only)`
+      : '[faro-server] Mentor: not configured (the extension uses its local mentor)',
   )
 
   const shutdown = () => {

@@ -1,33 +1,54 @@
 /**
  * FARO Mentor service.
  *
- * The contract the UI depends on is `MentorService`. The prototype ships
- * `LocalMentorService` - deterministic, offline, no API key - so the flow can
- * be demoed and tested. `HttpMentorService` is the real path: POST /api/mentor
- * with nothing but a `MentorContext`, and the backend owns the model call,
- * the tools and the guardrails.
+ * The contract the UI depends on is `MentorService`. Three implementations:
+ *
+ *  - `LocalMentorService`: deterministic, offline, no API key. Always
+ *    available, so the demo never breaks.
+ *  - `HttpMentorService`: POST /api/mentor on the FARO backend, which calls
+ *    Gemini with the key it holds. Only the eleven-field context, the
+ *    message and the last turns of this conversation are sent.
+ *  - `HybridMentorService`: Gemini when `VITE_MENTOR_MODE=gemini`, the local
+ *    mentor whenever the backend or the model cannot answer.
+ *
+ * The structured parts of the mentor (the check-in after a gap, Focus,
+ * planning, points) are not here: they are computed in the view from real
+ * course data, so their numbers never come from a model's guess.
  *
  * Guardrail that holds in both: the mentor guides, it does not produce graded
  * work. Style changes the voice, never the rules. Language changes the words,
  * never the rules either.
  */
+import { canvasConfig } from '@/data/canvas/config'
 import { dict } from '@/i18n'
-import type { Lang, MentorContext, MentorMessage, MentorStyle } from '@/types'
+import type { Lang, MentorContext, MentorMessage, MentorMode, MentorStyle } from '@/types'
 
 export interface MentorReply {
   text: string
   suggestions?: string[]
+  source: 'gemini' | 'local'
+  /** True when Gemini was asked for and the local mentor answered instead. */
+  fellBack?: boolean
+}
+
+export interface MentorInput {
+  message: string
+  context: MentorContext
+  history: MentorMessage[]
+  mode?: MentorMode
 }
 
 export interface MentorService {
-  send(input: {
-    message: string
-    context: MentorContext
-    history: MentorMessage[]
-  }): Promise<MentorReply>
+  send(input: MentorInput): Promise<MentorReply>
 }
 
+/** Which mentor the build uses. Only `gemini` ever sends anything off the device. */
+export const mentorMode: 'local' | 'gemini' =
+  (import.meta.env.VITE_MENTOR_MODE as string | undefined) === 'gemini' ? 'gemini' : 'local'
+
 /* ------------------------------------------------------------- guardrails */
+
+export const isDoItForMe = (message: string) => DO_IT_FOR_ME.es.test(message) || DO_IT_FOR_ME.en.test(message)
 
 const DO_IT_FOR_ME: Record<Lang, RegExp> = {
   en: /\b(write|do|solve|answer|complete|submit|finish)\b.{0,30}\b(my|the)\b.{0,20}\b(quiz|exam|test|assignment|essay|homework|report|reflection)\b/i,
@@ -75,64 +96,92 @@ function detectIntent(message: string, lang: Lang): Intent {
 }
 
 export class LocalMentorService implements MentorService {
-  async send({ message, context }: { message: string; context: MentorContext; history: MentorMessage[] }): Promise<MentorReply> {
+  async send({ message, context }: MentorInput): Promise<MentorReply> {
     await new Promise((r) => setTimeout(r, 350))
 
     const t = dict(context.language).mentor
     const r = t.replies
+    const local = (text: string, suggestions: string[]): MentorReply => ({ text, suggestions, source: 'local' })
 
-    if (DO_IT_FOR_ME.es.test(message) || DO_IT_FOR_ME.en.test(message)) {
-      return { text: t.refusal, suggestions: t.refusalSuggest }
-    }
+    if (isDoItForMe(message)) return local(t.refusal, t.refusalSuggest)
 
     const next = context.next_activity
     const mins = context.estimated_time ?? context.available_time
 
     switch (detectIntent(message, context.language)) {
       case 'next':
-        return { text: voice(context, r.next(next, mins)), suggestions: r.nextSuggest }
+        return local(voice(context, r.next(next, mins)), r.nextSuggest)
       case 'behind':
-        return {
-          text: voice(context, r.behind(context.progress, next, Math.min(10, mins))),
-          suggestions: r.behindSuggest,
-        }
+        return local(voice(context, r.behind(context.progress, next, Math.min(10, mins))), r.behindSuggest)
       case 'no_time':
-        return { text: voice(context, r.noTime(next)), suggestions: r.noTimeSuggest }
+        return local(voice(context, r.noTime(next)), r.noTimeSuggest)
       case 'explain':
-        return { text: voice(context, r.explain(context.course)), suggestions: r.explainSuggest }
+        return local(voice(context, r.explain(context.course)), r.explainSuggest)
       case 'unmotivated':
-        return {
-          text: voice(context, r.unmotivated(context.destination, next)),
-          suggestions: r.unmotivatedSuggest,
-        }
+        return local(voice(context, r.unmotivated(context.destination, next)), r.unmotivatedSuggest)
       case 'plan':
-        return {
-          text: voice(context, r.plan(context.available_time, next)),
-          suggestions: r.planSuggest,
-        }
+        return local(voice(context, r.plan(context.available_time, next)), r.planSuggest)
       default:
-        return { text: voice(context, r.other(context.course)), suggestions: r.otherSuggest }
+        return local(voice(context, r.other(context.course)), r.otherSuggest)
     }
   }
 }
 
-/** Real implementation, for when the FARO backend exists. */
-export class HttpMentorService implements MentorService {
-  constructor(private baseUrl: string) {}
+/** How many past turns go with a request. The backend trims to the same number. */
+export const HISTORY_TURNS = 8
 
-  async send(input: { message: string; context: MentorContext; history: MentorMessage[] }): Promise<MentorReply> {
+/** Gemini through the FARO backend. The key lives on the server; nothing here holds one. */
+export class HttpMentorService implements MentorService {
+  private readonly baseUrl: string
+
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl
+  }
+
+  async send(input: MentorInput): Promise<MentorReply> {
+    const history = input.history
+      .filter((m) => m.text.trim().length > 0)
+      .slice(-HISTORY_TURNS)
+      .map((m) => ({ role: m.role, text: m.text }))
     const res = await fetch(`${this.baseUrl}/api/mentor`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      // Only the message and the bounded context leave the client.
-      body: JSON.stringify({ message: input.message, context: input.context }),
+      // The bounded context, the message and the recent turns: nothing else leaves the client.
+      body: JSON.stringify({ message: input.message, context: input.context, history, mode: input.mode ?? 'chat' }),
+      signal: AbortSignal.timeout(25_000),
     })
-    if (!res.ok) throw new Error(`Mentor request failed: ${res.status}`)
-    return (await res.json()) as MentorReply
+    if (!res.ok) throw new Error(`mentor ${res.status}`)
+    const body = (await res.json()) as { text?: string; suggestions?: string[] }
+    if (!body.text) throw new Error('mentor empty')
+    return { text: body.text, suggestions: body.suggestions ?? [], source: 'gemini' }
   }
 }
 
-export const mentorService: MentorService = new LocalMentorService()
+/** Gemini first; the local mentor whenever Gemini cannot answer. The student always gets a reply. */
+export class HybridMentorService implements MentorService {
+  private readonly remote: MentorService
+  private readonly local: MentorService
+
+  constructor(remote: MentorService, local: MentorService) {
+    this.remote = remote
+    this.local = local
+  }
+
+  async send(input: MentorInput): Promise<MentorReply> {
+    // Graded-work requests never need a model call.
+    if (isDoItForMe(input.message)) return this.local.send(input)
+    try {
+      return await this.remote.send(input)
+    } catch {
+      return { ...(await this.local.send(input)), fellBack: true }
+    }
+  }
+}
+
+export const mentorService: MentorService =
+  mentorMode === 'gemini'
+    ? new HybridMentorService(new HttpMentorService(canvasConfig.apiUrl), new LocalMentorService())
+    : new LocalMentorService()
 
 /** Kept for callers that want the style list in display order. */
 export const mentorStyles: MentorStyle[] = ['direct', 'encouraging', 'detailed', 'friendly', 'challenge']

@@ -2,7 +2,7 @@
 
 ## 8.1 What is verified automatically
 
-`cd server && npm test` starts a fake Canvas with real pagination and the backend on top, and runs these 20 checks:
+`cd server && npm test` starts a fake Canvas with real pagination, a fake Gemini (`server/test/fake-gemini.ts`) and the backend on top, and runs these 36 checks:
 
 ```text
 ok  health names the Canvas host and never the token
@@ -25,9 +25,27 @@ ok  rate limit trips after the configured burst
 ok  Canvas 401 on analytics is passed through so the client can fall back
 ok  a wrong token is reported as rejected, not as a generic failure
 ok  .env parser handles comments, quotes and CRLF
+ok  mentor: answers with Gemini and returns text + suggestions
+ok  mentor: the key goes in a header, never in the URL
+ok  mentor: extra fields in the context never reach Gemini
+ok  mentor: teach mode reaches the system prompt; thought parts are dropped
+ok  mentor: history is trimmed to the last 8 turns
+ok  mentor: "do my homework" is refused before any model call
+ok  mentor: a bad context is rejected with 400
+ok  mentor: a non-JSON body gets 415 and a huge body 413
+ok  mentor: prose instead of JSON still becomes a reply
+ok  mentor: a rejected key and a safety block map to fallback codes
+ok  mentor: a slow model times out with 504
+ok  mentor: per-client cap answers 429 before calling the model
+ok  mentor: the key and the conversation never appear in the log
+ok  mentor: without a key the route answers 503 so the extension falls back
+ok  mentor-only server: Canvas routes say canvas_not_configured
+ok  config: half a Canvas setup is refused, mentor-only is accepted
 
-20 checks passed
+36 checks passed
 ```
+
+The last 16 cover the mentor: that Gemini's reply becomes `{ text, suggestions }`; that the key goes only in the header; that extra context fields never reach Gemini; that Teach me mode reaches the prompt; that history is trimmed to 8 turns; that "do my homework" is answered without calling the model; the `400`, `413` and `415`; that a prose reply is accepted; that a rejected key gives `mentor_key_rejected` without echoing Google's body; the safety block; the `504`; the per-client `429`; that neither the key nor the conversation appears in the log; the `503` without a key; a mentor-only server's `canvas_not_configured` and `/health`; and the configuration rules.
 
 It uses no test framework: `node:assert` and a ten-line `check(name, fn)`. The process exits non-zero on the first failure, so it works as a CI step.
 
@@ -43,6 +61,12 @@ In addition, the `src/data/canvas/` layer was compiled and run in Node against t
 | **Backend down** | `getCourseSnapshot()` rejects; it never returns an empty course |
 
 This script is not in the repository because it depends on compiling the extension without Vite; the scenarios are described here so they can be reproduced.
+
+## 8.2b The Gemini mentor, end to end
+
+The full path (extension with `VITE_MENTOR_MODE=gemini` → `POST /api/mentor` → Gemini) was verified in the browser **against the fake Gemini**, including the fallback: with the fake down, the extension answered with the local mentor and the note *"Gemini could not answer just now, so the local mentor did"*.
+
+**It has not been exercised against Google's real API** from the development environment: the network policy blocked it. The team validates it with its own key (chapter 6 and the README). Model names change: check `GEMINI_MODEL` at `ai.google.dev/gemini-api/docs/models` before trying.
 
 ## 8.3 Manual verification in the interface
 
@@ -81,4 +105,6 @@ Three experiments with the fixtures, each with a result that must change:
 
 - The React interface against a real backend in a browser (the tests above cover the data layer, not the render). Covered by the procedure in chapter 6.
 - The LTI routes (they answer 501 by design).
+- The mentor against Gemini's real API (see 8.2b).
+- The new `lib/` logic (`timeSession`, `rewardPath`, `teach`, `rhythm`) has no automated tests of its own.
 - Behaviour with large courses (more than 100 modules or assignments, i.e. more than one page of real Canvas). Pagination is tested with the fake Canvas; it is worth repeating against Free-for-Teacher with `per_page=2` forced in a test.

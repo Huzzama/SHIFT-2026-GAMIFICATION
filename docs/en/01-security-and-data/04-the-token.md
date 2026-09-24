@@ -1,6 +1,6 @@
 # 4. The Canvas token: life cycle
 
-The token is the most sensitive piece of data FARO handles. This chapter follows its whole life: where it is born, where it lives, where it travels, where it is **never**, and how it dies.
+The token is the most sensitive piece of data FARO handles. This chapter follows its whole life: where it is born, where it lives, where it travels, where it is **never**, and how it dies. Section 4.8 applies the same rules to the backend's second secret: the Gemini API key.
 
 ## 4.1 Birth
 
@@ -34,7 +34,7 @@ It leaves the backend in a single direction: towards Canvas, in the `Authorizati
 | Backend responses | `describe(env)` is the only representation of the configuration that leaves, and it contains `tokenPresent: true/false`, not the token. | **[test]** "health names the Canvas host and never the token" |
 | Error messages | `CanvasError` stores status and path, never the body of Canvas's response. | `server/src/canvas.ts` |
 | The git repository | `.gitignore` excludes `.env` in any folder. | `.gitignore` |
-| The AI service | The mentor context has no credential field. | `src/lib/mentorContext.ts` |
+| The AI service | The mentor context has no credential field, and the Gemini call carries only the Gemini key. | `src/lib/mentorContext.ts`, `server/src/mentor.ts` |
 
 ## 4.5 Rotation
 
@@ -43,7 +43,7 @@ Changing the token is editing `server/.env` and restarting the backend. There is
 ## 4.6 Revocation
 
 - **From Canvas:** the token owner deletes it under *Approved Integrations*. From that instant the backend receives `401` and reports it as `canvas_token_rejected` without trying anything else. **[test]** "a wrong token is reported as rejected, not as a generic failure".
-- **From the backend:** clear the value in `.env` and restart. The backend refuses to start without a token, which makes a "started without a credential and nobody noticed" state impossible.
+- **From the backend:** clear the value in `.env` and restart. The backend refuses to start with half a Canvas configuration (URL without token or token without URL) and refuses to start when it has nothing to serve (neither Canvas nor mentor). If only the Gemini key is left, it starts mentor-only and the Canvas routes answer `503 canvas_not_configured`; `/health` shows it as `canvas: null`. So a "started without a credential and nobody noticed" state does not exist. **[test]** "config: half a Canvas setup is refused, mentor-only is accepted".
 - **Production (OAuth2):** `DELETE /login/oauth2/token` revokes the student's token in Canvas. **[pending]**
 
 ## 4.7 If the token leaked
@@ -54,3 +54,14 @@ Scenario: someone gains access to `server/.env`.
 2. **Containment:** revoke the token in Canvas (one click). Generate a new one. Restart the backend.
 3. **Detection:** Canvas records the use of every token; a usage pattern from an unknown IP is visible to the institution.
 4. **Structural prevention:** the LTI + OAuth2 path removes the long-lived `.env` token file and replaces it with one-hour tokens issued per student.
+
+## 4.8 The second secret: the Gemini key
+
+If the institution turns on the AI mentor, the backend holds a second secret: `GEMINI_API_KEY`. It follows exactly the Canvas token's rules.
+
+- **Birth:** created in Google AI Studio, in a Google Cloud project **with active billing** (chapter 7 explains why the free tier is not usable with real students).
+- **Residence:** `server/.env` and the backend process's memory. Never in the extension: the root `.env.example` says so explicitly, and `HttpMentorService` has nowhere to hold one. It is optional: empty, the AI mentor is off and the extension uses its local mentor.
+- **Travel:** it leaves only towards Google, in the `x-goog-api-key` header of the call to `models/{model}:generateContent`, **never in the URL** (URLs end up in proxy logs). **[test]** "mentor: the key goes in a header, never in the URL".
+- **Where it never is:** in the backend's logs or responses. `describe(env)` shows only `mentor: {provider, model}`. If Google rejects the key (401/403), the backend answers `502 mentor_key_rejected` without repeating Google's error body. **[test]** "mentor: a rejected key and a safety block map to fallback codes", "mentor: the key and the conversation never appear in the log".
+- **Rotation and revocation:** edit `server/.env` and restart. If the key is exposed, revoke it in Google AI Studio / Google Cloud and generate another.
+- **Blast radius if it leaks:** someone could make Gemini calls billed to the institution's project. It gives no access to Canvas or to student data: FARO stores no conversations. `FARO_MENTOR_PER_MINUTE` (20 by default) caps, per client, how many model calls the backend accepts, to contain cost.

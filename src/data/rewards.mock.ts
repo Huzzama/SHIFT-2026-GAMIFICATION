@@ -17,12 +17,15 @@
 export interface SemesterCourse {
   name: string
   points: number
+  /** Shown in "Your impact": what the points stand for. Simulated like the rest. */
+  activities: number
+  modules: number
 }
 
 export const semesterLabel = { es: 'Semestre ago–dic 2026', en: 'Aug–Dec 2026 semester' }
 
 export const previousCourses: SemesterCourse[] = [
-  { name: 'Fundamentos de administración', points: 2560 },
-  { name: 'Comunicación efectiva', points: 2490 },
-  { name: 'Finanzas personales', points: 2650 },
+  { name: 'Fundamentos de administración', points: 2560, activities: 16, modules: 6 },
+  { name: 'Comunicación efectiva', points: 2490, activities: 16, modules: 6 },
+  { name: 'Finanzas personales', points: 2650, activities: 16, modules: 6 },
 ]

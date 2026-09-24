@@ -6,22 +6,25 @@
  */
 import { allowedPaths } from './allowlist.ts'
 import type { Fetch } from './canvas.ts'
-import { describe, type Env } from './env.ts'
-import { HttpApp, json } from './http.ts'
+import { canvasEnabled, describe, type Env } from './env.ts'
+import { HttpApp, json, type Handler } from './http.ts'
 import { canvasRoute } from './routes/canvas.ts'
 import { launchRoute } from './routes/launch.ts'
 import { ltiJwks, ltiLaunch, ltiLogin } from './routes/lti.ts'
+import { mentorRoute } from './routes/mentor.ts'
 
 export interface AppOptions {
   env: Env
   /** Injected by tests; the real process uses global fetch. */
   fetchImpl?: Fetch
+  /** Injected by tests for the Gemini call. */
+  geminiFetch?: typeof fetch
   log?: (line: Record<string, unknown>) => void
 }
 
 const startedAt = Date.now()
 
-export function buildApp({ env, fetchImpl, log }: AppOptions): HttpApp {
+export function buildApp({ env, fetchImpl, geminiFetch, log }: AppOptions): HttpApp {
   const app = new HttpApp({
     allowedOrigins: env.allowedOrigins,
     rateLimitPerMinute: env.rateLimitPerMinute,
@@ -33,13 +36,18 @@ export function buildApp({ env, fetchImpl, log }: AppOptions): HttpApp {
       ok: true,
       service: 'faro-server',
       uptimeSeconds: Math.round((Date.now() - startedAt) / 1000),
-      canvas: { host: describe(env).canvasHost, mode: 'live', readOnly: true },
+      canvas: canvasEnabled(env) ? { host: describe(env).canvasHost, mode: 'live', readOnly: true } : null,
+      mentor: describe(env).mentor,
       allowedEndpoints: allowedPaths.map((p) => ({ name: p.name, purpose: p.purpose })),
     }),
   )
 
-  app.get(/^\/api\/launch$/, launchRoute(env, fetchImpl))
-  app.get(/^\/canvas\/api\/v1\/.+/, canvasRoute(env, fetchImpl))
+  // Without Canvas configured the server still runs (mentor only); these say why they are empty.
+  const canvasOff: Handler = () => json(503, { error: 'canvas_not_configured' })
+  app.get(/^\/api\/launch$/, canvasEnabled(env) ? launchRoute(env, fetchImpl) : canvasOff)
+  app.get(/^\/canvas\/api\/v1\/.+/, canvasEnabled(env) ? canvasRoute(env, fetchImpl) : canvasOff)
+
+  app.post(/^\/api\/mentor$/, mentorRoute(env, geminiFetch))
 
   app.get(/^\/lti\/login$/, ltiLogin)
   app.post(/^\/lti\/launch$/, ltiLaunch)

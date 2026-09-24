@@ -459,8 +459,38 @@ export interface MentorMessage {
   role: 'student' | 'faro'
   text: string
   at: string
-  /** Optional one-tap follow-ups offered with a FARO message. */
+  /** Optional one-tap follow-ups offered with a FARO message; tapping one sends it as the student's words. */
   suggestions?: string[]
+  /** Optional one-tap actions that FARO handles itself (start a step, pick a life state, answer a check question). */
+  choices?: MentorChoice[]
+  /** Who wrote a FARO message: the model behind the backend, or the local mentor. Shown for transparency. */
+  source?: 'gemini' | 'local'
+}
+
+/** A button under a FARO message. `id` is a small action string, e.g. `life:less_time` or `start:m-12`. */
+export interface MentorChoice {
+  id: string
+  label: string
+  /** Visually primary (the one thing FARO recommends). */
+  primary?: boolean
+}
+
+/**
+ * What kind of help the student asked for. Changes how FARO answers, never
+ * the rules it answers under.
+ */
+export type MentorMode = 'chat' | 'teach' | 'focus' | 'recovery' | 'planning'
+
+/** A small plan the student accepted in the mentor (e.g. for the weekend). Shown on Home. */
+export interface DayPlan {
+  label: string
+  minutes: number
+  items: { milestoneId: string; title: string; minutes: number }[]
+}
+
+export interface WeekPlan {
+  createdAt: string
+  days: DayPlan[]
 }
 
 /**

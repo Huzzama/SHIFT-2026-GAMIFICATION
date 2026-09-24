@@ -17,7 +17,7 @@ Al empezar, las tarjetas ocupan toda la pantalla, una a la vez, con tres opcione
 - Las preguntas son sobre **los módulos en los que ya trabajaste**, empezando por el último. Nunca sobre algo que no has visto.
 - Si aciertas, la opción se pone verde y aparece la explicación.
 - Si fallas, la tarjeta tiembla, la opción se tacha, aparece la idea clave y **lo intentas otra vez**. No hay forma de «perder».
-- Al terminar las tres: *«Estás reconectado. Recordaste 2 de 3 a la primera y repasaste el resto.»* y **+75 puntos**, por terminar, no por acertar a la primera.
+- Al terminar las tres, una pantalla de cierre: la marca *Repaso hecho*, el título **«Volviste»** y *«Recordaste más de lo que creías. Tu ruta está lista.»* (si acertaste a la primera menos de la mitad: *«Las repasaste todas, y eso es lo que cuenta hoy. Tu ruta está lista.»*), **+75 puntos FARO** y el botón **Continuar**. Los puntos son por terminar, no por acertar a la primera.
 
 Solo se premia un juego de tarjetas al día. Después, arriba de la pantalla queda la marca *Reconectado hoy · +75 puntos*.
 

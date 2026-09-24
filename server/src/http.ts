@@ -9,8 +9,8 @@
  * without change.
  *
  * What is logged: method, path (without query), status, duration, a short
- * request id. What is never logged: headers, bodies, query strings, the
- * client's Canvas data. Query strings are dropped because Canvas paths can
+ * request id. What is never logged: headers, bodies (a mentor message is a
+ * student's own words), query strings, the client's Canvas data. Query strings are dropped because Canvas paths can
  * carry ids that identify a person.
  */
 import { createServer, type IncomingMessage, type ServerResponse, type Server } from 'node:http'
@@ -22,6 +22,58 @@ export interface Req {
   url: URL
   headers: IncomingMessage['headers']
   params: string[]
+  /** Socket address of the caller. Used for rate limiting only; never logged. */
+  client: string
+  /** Parsed JSON body of a POST. `undefined` for GET. */
+  body?: unknown
+}
+
+/** Largest POST body accepted. The mentor request is a message plus a small context. */
+export const MAX_BODY_BYTES = 32 * 1024
+
+class BodyError extends Error {
+  readonly status: number
+  readonly code: string
+  constructor(status: number, code: string) {
+    super(code)
+    this.status = status
+    this.code = code
+  }
+}
+
+/** Reads a JSON body with a hard size cap. Never logs or echoes it. */
+function readJson(req: IncomingMessage): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const type = String(req.headers['content-type'] ?? '')
+    if (!type.startsWith('application/json')) {
+      req.resume()
+      return reject(new BodyError(415, 'json_required'))
+    }
+    const chunks: Buffer[] = []
+    let size = 0
+    let failed = false
+    req.on('data', (chunk: Buffer) => {
+      if (failed) return
+      size += chunk.length
+      if (size > MAX_BODY_BYTES) {
+        failed = true
+        reject(new BodyError(413, 'body_too_large'))
+        return
+      }
+      chunks.push(chunk)
+    })
+    req.on('end', () => {
+      if (failed) return
+      try {
+        resolve(JSON.parse(Buffer.concat(chunks).toString('utf8') || 'null'))
+      } catch {
+        reject(new BodyError(400, 'invalid_json'))
+      }
+    })
+    req.on('error', () => {
+      if (!failed) reject(new BodyError(400, 'body_read_failed'))
+    })
+  })
 }
 
 export interface Reply {
@@ -122,7 +174,7 @@ export class HttpApp {
     if (!this.opts.allowedOrigins.includes(origin)) return null
     return {
       'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
       'Access-Control-Max-Age': '600',
       Vary: 'Origin',
@@ -173,8 +225,17 @@ export class HttpApp {
     }
 
     const params = url.pathname.match(route.pattern)?.slice(1) ?? []
+    let body: unknown
+    if (method === 'POST') {
+      try {
+        body = await readJson(req)
+      } catch (err) {
+        if (err instanceof BodyError) return send(json(err.status, { error: err.code }))
+        throw err
+      }
+    }
     try {
-      const reply = await route.handler({ id, method, url, headers: req.headers, params })
+      const reply = await route.handler({ id, method, url, headers: req.headers, params, client, body })
       send(reply)
     } catch (err) {
       // Deliberately generic: the client never sees an internal message.

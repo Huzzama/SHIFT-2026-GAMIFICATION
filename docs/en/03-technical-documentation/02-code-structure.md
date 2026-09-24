@@ -21,9 +21,16 @@ faro/
 │   │   │   ├── config.ts      mode, backend URL, launch resolution
 │   │   │   ├── status.ts      behaviour flags (activity fallback)
 │   │   │   └── fixtures.ts    the demo course, in Canvas's exact shape
-│   │   └── community.mock.ts
+│   │   ├── community.mock.ts
+│   │   ├── reviewBank.ts    question bank per module (review cards and local Teach me)
+│   │   └── rewards.mock.ts  the semester's simulated previous courses
 │   ├── lib/                 pure logic, no React and no fetch (chapter 3)
-│   ├── services/mentor.ts   LocalMentorService (today) · HttpMentorService (backend)
+│   │   ├── timeSession.ts   buildTimeSession · planDays · openSteps · sessionRules
+│   │   ├── rewardPath.ts    pathToPoints: the realistic path to the next milestone
+│   │   ├── teach.ts         teachTopics · lessonQuestions · answerTeach
+│   │   ├── rhythm.ts        learningRhythm · weekRhythm · activeDays
+│   │   └── …                friction, journey, recoveryPlanner, points, rewards, mentorContext…
+│   ├── services/mentor.ts   LocalMentorService · HttpMentorService · HybridMentorService
 │   ├── state/
 │   │   ├── store.tsx        the app state and its derivations
 │   │   ├── storage.ts       chrome.storage.local with a localStorage fallback
@@ -40,15 +47,17 @@ faro/
 │   │   ├── env.ts           configuration and .env
 │   │   ├── allowlist.ts     the 6 allowed paths
 │   │   ├── canvas.ts        the only function that talks to Canvas
-│   │   ├── http.ts          router, CORS, rate limit, logging
-│   │   └── routes/          health · launch · canvas · lti
+│   │   ├── http.ts          router, CORS, rate limit, logging, JSON body ≤ 32 KB
+│   │   ├── mentor.ts        sanitizeMentorRequest · systemPrompt · callGemini
+│   │   └── routes/          health · launch · canvas · mentor · lti
 │   ├── test/
 │   │   ├── fake-canvas.ts   a fake Canvas with real pagination
-│   │   └── e2e.ts           20 checks
+│   │   ├── fake-gemini.ts   a fake Gemini (replies, errors, slowness)
+│   │   └── e2e.ts           36 checks
 │   ├── .env.example
 │   └── package.json         "dependencies": {}
 ├── docs/                    the three books
-├── .env.example             VITE_CANVAS_MODE, VITE_FARO_API_URL
+├── .env.example             VITE_CANVAS_MODE, VITE_FARO_API_URL, VITE_MENTOR_MODE
 └── package.json             react, react-dom; vite, typescript
 ```
 
@@ -64,7 +73,7 @@ faro/
 
 | Convention | Rule | Why |
 |---|---|---|
-| Thresholds | Named constants in an exported object (`frictionRules`, `pointsConfig`, `feasibilityRules`) | Tuned in one place and can be shown in documentation |
+| Thresholds | Named constants in an exported object (`frictionRules`, `pointsConfig`, `feasibilityRules`, `sessionRules`) | Tuned in one place and can be shown in documentation |
 | Copy | Always from `t.*` (the active dictionary), never literals in views | Two languages, and the compiler watches |
 | Components | Small; a `.tsx` over ~300 lines probably contains `lib/` logic | Readability |
 | URLs | No hand-written API URL outside `data/` and `server/` | One place to change |
@@ -83,3 +92,4 @@ faro/
 - No ORM or database yet.
 - No HTTP framework in the backend (Fastify was planned; it was replaced by `node:http` so the token-holding process runs no third-party code; the routes have the shape `(req) => reply`, which ports to Fastify unchanged if the project decides to).
 - No test dependency. The backend tests use `node:assert` and run with `node`.
+- No Google SDK. The backend calls Gemini with native `fetch`.

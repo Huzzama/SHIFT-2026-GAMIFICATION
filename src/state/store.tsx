@@ -34,7 +34,7 @@ import { pickReviewSet, shouldOfferReview } from '@/lib/reviewCards'
 import { semesterStatus, type SemesterStatus } from '@/lib/rewards'
 import { reviewBank, REVIEW_BANK_COURSE_ID } from '@/data/reviewBank'
 import { previousCourses } from '@/data/rewards.mock'
-import { learningRhythm } from '@/lib/rhythm'
+import { learningRhythm, weekRhythm, type RhythmDay } from '@/lib/rhythm'
 import { applySessions } from '@/lib/sessions'
 import { useCommunityPoints } from './community'
 import { readValue, writeValue, clearAll } from './storage'
@@ -56,6 +56,7 @@ import type {
   ReviewRecord,
   RewardTier,
   StudySession,
+  WeekPlan,
 } from '@/types'
 
 const EMPTY_PROFILE: Profile = {
@@ -94,6 +95,11 @@ interface StoreValue {
   awayGap: number
   /** Consecutive active days, ending today. Shown alongside momentum, never instead of it. */
   rhythmDays: number
+  /** This week, Monday to Sunday, and which days had learning in them. */
+  week: RhythmDay[]
+  /** A small plan accepted in the mentor, shown on Home until done or cleared. */
+  weekPlan: WeekPlan | null
+  setWeekPlan: (p: WeekPlan | null) => void
   /** FARO Points earned in this course, see `lib/points.ts`. */
   points: PointsBreakdown
   /** The semester's reward track: this course plus previous ones, see `lib/rewards.ts`. */
@@ -136,11 +142,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [paused, setPausedState] = useState(false)
   const [reviews, setReviews] = useState<ReviewRecord[]>([])
   const [redemption, setRedemption] = useState<Redemption | null>(null)
+  const [weekPlan, setWeekPlanState] = useState<WeekPlan | null>(null)
 
   useEffect(() => {
     let alive = true
     ;(async () => {
-      const [p, s, m, done, pz, l, pr, rv, rd] = await Promise.all([
+      const [p, s, m, done, pz, l, pr, rv, rd, wp] = await Promise.all([
         readValue<Purpose>('purpose'),
         readValue<MentorStyle>('mentorStyle'),
         readValue<number>('availableMinutes'),
@@ -150,6 +157,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         readValue<Profile>('profile'),
         readValue<ReviewRecord[]>('reviews'),
         readValue<Redemption>('redemption'),
+        readValue<WeekPlan>('weekPlan'),
       ])
       if (!alive) return
       if (l === 'es' || l === 'en') setLangState(l)
@@ -161,6 +169,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (pr) setProfileState(pr)
       if (Array.isArray(rv)) setReviews(rv)
       if (rd) setRedemption(rd)
+      if (wp && Array.isArray(wp.days)) setWeekPlanState(wp)
 
       try {
         const snap = await faroClient.getCourseSnapshot()
@@ -205,6 +214,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     void writeValue('profile', p)
   }, [])
 
+  const setWeekPlan = useCallback((p: WeekPlan | null) => {
+    setWeekPlanState(p)
+    void writeValue('weekPlan', p)
+  }, [])
+
   const setMentorStyle = useCallback((s: MentorStyle) => {
     setMentorStyleState(s)
     void writeValue('mentorStyle', s)
@@ -230,6 +244,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setPausedState(false)
     setReviews([])
     setRedemption(null)
+    setWeekPlanState(null)
   }, [])
 
   /**
@@ -286,6 +301,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   /** Consecutive active days, ending today - Learning Rhythm, see `lib/rhythm.ts`. */
   const rhythmDays = useMemo(() => learningRhythm(sessions), [sessions])
+  const week = useMemo(() => weekRhythm(sessions, snapshot?.activity ?? []), [sessions, snapshot])
 
   /**
    * FARO Points: config-driven, earned from the same real actions above -
@@ -410,6 +426,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     paused,
     awayGap,
     rhythmDays,
+    week,
+    weekPlan,
+    setWeekPlan,
     points,
     semester,
     reviews,

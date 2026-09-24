@@ -32,6 +32,7 @@ Chapters 1 to 5 describe the code. Chapters 6 and 7 are step-by-step procedures.
 | npm | 9+ | Extension dependencies |
 | Chrome / Edge | current | Loading the extension |
 | A Canvas account | Free-for-Teacher or institutional | Chapters 6 and 7 |
+| A Gemini API key | Optional; with real students, from a project with active billing | The AI mentor (chapter 6.9) |
 
 ## The commands, in one table
 
@@ -44,5 +45,5 @@ Chapters 1 to 5 describe the code. Chapters 6 and 7 are step-by-step procedures.
 | `server/` | `cp .env.example .env` | Creates the backend configuration (then edit it) |
 | `server/` | `npm run dev` | Backend with auto-reload |
 | `server/` | `npm start` | Backend |
-| `server/` | `npm test` | 20 checks against a fake Canvas |
+| `server/` | `npm test` | 36 checks against a fake Canvas and a fake Gemini |
 | `server/` | `npm install` | Only if you want `npm run typecheck` there (installs `typescript` and `@types/node`; the backend itself has no dependencies) |

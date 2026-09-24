@@ -34,8 +34,8 @@ Anything without a mark is context.
 
 | Guarantee | How it is met | Mark |
 |---|---|---|
-| **FARO only reads.** It cannot modify grades, submissions, due dates or content. | Every call is a `GET`. The backend refuses any other method before touching the network. The LTI write scopes (`score`, `lineitem`) are explicitly refused. | [code] [test] |
-| **The credential is never in the browser.** | The token lives in `server/.env` and in the backend's memory. The extension has no field to hold one and no network permission for `instructure.com`. | [code] [test] |
+| **FARO only reads.** It cannot modify grades, submissions, due dates or content. | Every call to Canvas is a `GET`. The backend refuses any other method before touching the network. The LTI write scopes (`score`, `lineitem`) are explicitly refused. | [code] [test] |
+| **The credentials are never in the browser.** | The Canvas token and the Gemini key live in `server/.env` and in the backend's memory. The extension has no field to hold them and no network permission for `instructure.com`. | [code] [test] |
 | **Only six Canvas paths, and nothing else.** | An allow list in the backend (`server/src/allowlist.ts`) mirrored in the extension. A path outside the list is refused locally, with no call to Canvas. | [code] [test] |
-| **The AI mentor sees eleven fields and no personal data.** | The context is built in a single file (`src/lib/mentorContext.ts`) that has no access to name, email, photo or grades. | [code] |
+| **The AI mentor sees eleven fields and no personal data.** | The mentor is local by default. If Gemini is enabled, it receives, through the backend, the eleven-field context, the message and the last 8 turns. The context is built in a single file (`src/lib/mentorContext.ts`) that has no access to name, email, photo or grades, and the backend filters it again (`server/src/mentor.ts`). | [code] [test] |
 | **A risk score is never shown to the student.** | Friction states exist only to choose the intervention; the interface uses supportive language. | [code] |

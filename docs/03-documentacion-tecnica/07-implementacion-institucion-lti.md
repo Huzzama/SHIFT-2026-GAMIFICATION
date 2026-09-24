@@ -71,7 +71,7 @@ Con esto desaparece `CANVAS_ACCESS_TOKEN` de `.env`: el backend pasa a tener un 
 | Un token para todo | Un token OAuth2 por persona, almacenado cifrado |
 | Autorización por origen (CORS) y localhost | Autorización por sesión (cookie) + CORS |
 | Estado de FARO en el navegador | PostgreSQL: propósito, sesiones, preferencias, tokens |
-| Mentor local | `POST /api/mentor` en el backend, con el contexto de 11 campos y el contrato con el proveedor |
+| Mentor local, o Gemini vía `POST /api/mentor` con una clave en `.env` | El mismo `POST /api/mentor`, con una clave de un proyecto de la institución con facturación activa, términos revisados por jurídico, y la sesión LTI como autorización |
 
 `allowlist.ts`, `canvas.ts` y las rutas `/canvas/*` **no cambian**: la lista blanca y la paginación son las mismas con cualquier token.
 

@@ -11,6 +11,7 @@
  */
 import { Icon } from '@/components/Icon'
 import { communityRecognitionState, evaluateCommunityAchievements } from '@/lib/community'
+import { activeDays } from '@/lib/rhythm'
 import { totalMinutes } from '@/lib/sessions'
 import { useCommunity } from '@/state/community'
 import { useStore } from '@/state/store'
@@ -48,7 +49,7 @@ export function ProgressView({
   onEditPurpose: () => void
   onOpenProfile: () => void
 }) {
-  const { t, journey, friction, sessions, achievements, snapshot, purpose, awayGap } = useStore()
+  const { t, journey, friction, sessions, achievements, snapshot, purpose, awayGap, week } = useStore()
   const community = useCommunity()
 
   const recognitions = evaluateCommunityAchievements(
@@ -89,6 +90,31 @@ export function ProgressView({
           <Stat value={`${modulesDone}/${moduleCount}`} label={t.progress.modulesDone} />
           <Stat value={`${friction.momentum}%`} label={t.progress.momentum} />
         </div>
+      </div>
+
+      <div className="card">
+        <div className="row row--between">
+          <div className="eyebrow">{t.progress.week.eyebrow}</div>
+          <span className="muted" style={{ fontSize: 'var(--text-xs)' }}>{t.progress.week.count(activeDays(week))}</span>
+        </div>
+        <ol className="week" aria-label={t.progress.week.count(activeDays(week))}>
+          {week.map((d) => (
+            <li
+              key={d.weekday}
+              className={`week__day${d.active ? ' week__day--on' : ''}${d.today ? ' week__day--today' : ''}${d.future ? ' week__day--future' : ''}`}
+              title={`${t.progress.week.dayNames[d.weekday]}: ${d.active ? t.progress.week.active : d.future ? t.progress.week.upcoming : t.progress.week.rest}`}
+            >
+              <span className="week__dot" aria-hidden="true">
+                {d.active ? <Icon name="check" size={14} /> : d.future ? '' : '—'}
+              </span>
+              <span className="week__label">{t.progress.week.days[d.weekday]}</span>
+              <span className="sr-only">
+                {t.progress.week.dayNames[d.weekday]}: {d.active ? t.progress.week.active : d.future ? t.progress.week.upcoming : t.progress.week.rest}
+              </span>
+            </li>
+          ))}
+        </ol>
+        <p className="muted" style={{ margin: '10px 0 0', lineHeight: 1.5 }}>{t.progress.week.body}</p>
       </div>
 
       <div className="card">

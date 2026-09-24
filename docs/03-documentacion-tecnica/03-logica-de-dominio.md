@@ -134,7 +134,7 @@ Nada aquí toca fechas ni reglas académicas. Solo cambia el tamaño y la forma 
 
 `computePoints` también devuelve `thisWeek`: lo ganado en los últimos 7 días por acciones hechas en FARO (sesiones, tarjetas y el bono de regreso si lo ganó una de ellas).
 
-`learningRhythm(sessions)` cuenta días consecutivos con sesión, terminando hoy. Romper la racha deja de sumar; nunca resta.
+`learningRhythm(sessions)` cuenta días consecutivos con sesión, terminando hoy, y solo alimenta el bono de ritmo: un día sin sesión hace que deje de sumar; nunca resta. Lo que ve el estudiante no es esa cuenta, sino la semana de `weekRhythm` (3.13).
 
 ## 3.5b `rewards.ts` — la recompensa del semestre
 
@@ -188,4 +188,64 @@ Una `StudySession` es lo que FARO anota cuando el estudiante marca un paso como 
 
 ## 3.9 `mentorContext.ts` — la frontera de privacidad
 
-Una función, `buildMentorContext`, que produce los once campos del `MentorContext`. Si un dato no se construye aquí, el mentor no lo recibe. No lee `Profile`. Es el único archivo que el Libro 1 cita como contrato de datos del mentor.
+Una función, `buildMentorContext`, que produce los once campos del `MentorContext`. Si un dato no se construye aquí, el mentor no lo recibe. No lee `Profile`. Es el único archivo que el Libro 1 cita como contrato de datos del mentor. En modo `gemini`, el backend vuelve a aplicar el mismo contrato (`sanitizeMentorRequest`, capítulo 5): la extensión no es la única barrera.
+
+## 3.10 `timeSession.ts` — "¿cuánto tiempo tienes?"
+
+Convierte un número de minutos en una sesión. Lo usan el selector de Inicio (5 / 10 / 20 / 30+), el modo Enfoque del Mentor (5 / 10 / 15 / 30) y el plan de fin de semana, así que los tres siempre coinciden.
+
+`sessionRules = { REVIEW_MINUTES: 3, OPEN_ENDED_MINUTES: 45 }` — el repaso cuenta 3 minutos; la opción "30+" planea 45.
+
+**`openSteps(journey)`** — las actividades abiertas en el orden en que FARO las haría: primero las `missed`, luego `current` y `upcoming` en orden de ruta. Las `locked` no entran.
+
+**`buildTimeSession(journey, minutes, { reviewAvailable })`**:
+
+```text
+reviewAvailable y minutes ≥ 3               → primero { review, 3 min }
+para cada paso de openSteps, en orden:
+  cabe en lo que queda                      → se agrega
+  no cabe                                   → se detiene (no salta a uno posterior más corto)
+ningún paso agregado y quedan ≥ 5 min       → { partial: "los primeros N min" del primer paso }
+```
+
+Nunca salta adelante: el quiz de un módulo no va antes del ejercicio que evalúa. `sessionMinutes(items)` suma la sesión. Los minutos son estimaciones de FARO; la interfaz dice "unos".
+
+**`planDays(journey, days)`** — p. ej. sábado 60 y domingo 45. Los pasos van en orden de ruta y no se repiten entre días; un día se cierra en el primer paso que no cabe, así que el plan queda más pequeño que el tiempo, a propósito. Un paso más largo que el presupuesto entero de un día vacío ocupa ese día en vez de desaparecer. Un día con 0 minutos queda vacío. El resultado es un `DayPlan[]`; si el estudiante lo acepta, se guarda como `WeekPlan` con `setWeekPlan` (clave de almacenamiento `weekPlan`) y aparece en Inicio.
+
+## 3.11 `rewardPath.ts` — el camino realista a la siguiente meta
+
+**`pathToPoints(journey, gap)`** responde "¿qué me falta para la siguiente meta de TecmiRewards?" con los mismos números que Impacto, nunca con los de un modelo.
+
+- Recorre lo no completado en orden de ruta, `missed` primero. **Incluye los pasos bloqueados**: se abren conforme avanza la ruta, y dejarlos fuera subestimaría el curso.
+- Cada paso suma `POINTS_PER_ACTIVITY` (50); si es el último paso abierto de su módulo, suma además `POINTS_PER_MODULE` (250).
+- Se detiene cuando los puntos cubren `gap`.
+- Devuelve `{ steps, modules, points, minutes, reachable }`. `reachable: false` cuando terminar todo lo que queda del curso no alcanza; el Mentor lo dice así, sin maquillarlo.
+
+**Solo cuentan puntos garantizados.** Los bonos de ritmo, regreso y tarjetas acortarían el camino, pero prometerlos sería un empujón disfrazado de dato.
+
+## 3.12 `teach.ts` — Enséñame sin modelo
+
+El ciclo: **explicar brevemente → una pregunta → respuesta → adaptar.** El banco de repaso (`data/reviewBank.ts`) ya tiene, por módulo, pregunta, opciones y una explicación corta: una microlección.
+
+- **`teachTopics(journey, bank, moduleNames)`** — módulos con preguntas; primero los que el estudiante ya tocó (`touchedModules`), luego el resto en orden del curso.
+- **`lessonQuestions(bank, moduleId)`** — las preguntas del módulo, en orden.
+- **`answerTeach(bank, state, option)`** con `TeachState = { moduleId, index, tried }`:
+
+```text
+option correcta  → { right, next: la siguiente pregunta del módulo | null }
+option incorrecta → { wrong, question, remaining: opciones sin las ya probadas }
+```
+
+Con `next`, el Mentor hace la segunda pregunta, un poco distinta; con `null`, propone aplicarlo al siguiente paso. Con `wrong`, repite la idea clave (`explain`) y vuelve a preguntar sin la opción ya probada. No hay puntos en juego.
+
+Las lecciones existen solo para el curso del banco (`REVIEW_BANK_COURSE_ID`). En modo `gemini`, los temas abiertos van al backend con `mode: 'teach'` (TEACH MODE del prompt, capítulo 5).
+
+## 3.13 `rhythm.ts` — la semana de ritmo
+
+**`weekRhythm(sessions, activity, now)`** — la semana actual, de lunes a domingo, como siete `RhythmDay { weekday (0 = lunes), date, active, today, future }`. Un día es `active` si FARO registró una sesión **o** Canvas registró actividad del curso ese día. Los días posteriores a hoy son `future`, no "perdidos".
+
+**`activeDays(week)`** — cuántos días activos lleva la semana.
+
+El store expone `week` (derivado de las sesiones y de `snapshot.activity`). Lo usan la tarjeta de ritmo de Inicio (*"N/7 · días activos esta semana"*), la tarjeta *Tu ritmo* de Progreso y la línea *"Estudiaste N días esta semana"* de Impacto.
+
+**Regla de producto:** consistencia flexible. Para alguien que trabaja, cinco de siete es una gran semana, y un hueco el miércoles no rompe nada. No hay racha que perder.

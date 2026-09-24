@@ -71,7 +71,7 @@ With this, `CANVAS_ACCESS_TOKEN` disappears from `.env`: the backend goes from o
 | One token for everything | One OAuth2 token per person, stored encrypted |
 | Authorisation by origin (CORS) and localhost | Authorisation by session (cookie) + CORS |
 | FARO state in the browser | PostgreSQL: purpose, sessions, preferences, tokens |
-| Local mentor | `POST /api/mentor` in the backend, with the 11-field context and the provider contract |
+| Local mentor, or Gemini via `POST /api/mentor` with a key in `.env` | The same `POST /api/mentor`, with a key from an institutional project with active billing, terms reviewed by legal, and the LTI session as authorisation |
 
 `allowlist.ts`, `canvas.ts` and the `/canvas/*` routes **do not change**: the allow list and pagination are the same with any token.
 

@@ -17,7 +17,7 @@ When you start, the cards take the whole screen, one at a time, with three large
 - The questions are about **the modules you already worked on**, latest first. Never about something you have not seen.
 - If you are right, the option turns green and the explanation appears.
 - If you are wrong, the card shakes, the option is struck through, the key idea appears and **you try again**. There is no way to "lose".
-- When the three are done: *"You are reconnected. You remembered 2 of 3 first time and reviewed the rest."* and **+75 points**, for finishing, not for first-try answers.
+- When the three are done, a closing screen: the flag *Review done*, the title **"You're back"** and *"You remembered more than you thought. Your journey is ready."* (if fewer than half were right first time: *"You went through all of it, and that is what counts today. Your journey is ready."*), **+75 FARO points** and the **Continue** button. Points are for finishing, not for first-try answers.
 
 Only one set of cards is rewarded per day. Afterwards, the top of the screen keeps the mark *Reconnected today · +75 points*.
 

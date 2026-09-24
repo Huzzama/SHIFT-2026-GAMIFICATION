@@ -32,7 +32,7 @@ In *Live* mode FARO never talks to Canvas directly: it goes through its own serv
 5. Recovery
 6. FARO Mentor
 7. Community
-8. Rewards and Progress
+8. Impact and Progress
 9. Profile
 10. Rules FARO never breaks
 

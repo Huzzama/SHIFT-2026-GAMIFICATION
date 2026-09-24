@@ -68,7 +68,7 @@ Este es el camino de producción. Está diseñado y documentado en el código; l
 
 **Problema que resuelve:** que una página web cualquiera, abierta en el mismo navegador, use el backend de FARO como si fuera la extensión.
 
-**Cómo lo usa FARO:** el backend mantiene una lista de orígenes permitidos (`FARO_ALLOWED_ORIGINS`). Un origen fuera de la lista recibe `403` sin datos ni cabeceras CORS. Los métodos anunciados son solo `GET, OPTIONS`.
+**Cómo lo usa FARO:** el backend mantiene una lista de orígenes permitidos (`FARO_ALLOWED_ORIGINS`). Un origen fuera de la lista recibe `403` sin datos ni cabeceras CORS. Los métodos anunciados son `GET, POST, OPTIONS`: `POST` existe para `POST /api/mentor` (y para el lanzamiento LTI, que hoy responde 501). Hacia Canvas el backend sigue enviando solo `GET`.
 
 **[código]** `server/src/http.ts`, método `corsHeaders`. **[prueba]** "a browser origin outside the list gets 403 and no data", "CORS preflight succeeds for an allowed origin".
 
@@ -76,9 +76,9 @@ Este es el camino de producción. Está diseñado y documentado en el código; l
 
 **Problema que resuelve:** una extensión con un error que reintenta en bucle podría enviar miles de peticiones a Canvas con el token institucional, y Canvas podría suspender ese token.
 
-**Cómo lo usa FARO:** contador por cliente en ventana de un minuto (`FARO_RATE_LIMIT_PER_MINUTE`, 120 por defecto). Al superarlo, `429` con `Retry-After`.
+**Cómo lo usa FARO:** contador por cliente en ventana de un minuto (`FARO_RATE_LIMIT_PER_MINUTE`, 120 por defecto). Al superarlo, `429` con `Retry-After`. Las llamadas al modelo tienen además su propio tope por cliente (`FARO_MENTOR_PER_MINUTE`, 20 por defecto), que responde `429 mentor_rate_limited` antes de llamar a Gemini, para contener el costo.
 
-**[código]** `server/src/http.ts`, clase `RateLimiter`. **[prueba]** "rate limit trips after the configured burst".
+**[código]** `server/src/http.ts`, clase `RateLimiter`; `server/src/routes/mentor.ts`. **[prueba]** "rate limit trips after the configured burst", "mentor: per-client cap answers 429 before calling the model".
 
 ## 3.8 Cabeceras de respuesta
 

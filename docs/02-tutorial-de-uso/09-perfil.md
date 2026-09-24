@@ -5,7 +5,7 @@
 Hay dos caminos, ambos válidos:
 
 1. **Desde Comunidad** — toca tu avatar o tu nombre en la tarjeta de presencia, arriba del feed. Abre tu perfil público: lo que los demás ven de ti.
-2. **Desde el menú inferior** — la pestaña de Perfil, junto a Recompensas.
+2. **Desde el menú inferior** — la pestaña de Perfil, junto a Impacto.
 
 ### Qué hay dentro
 

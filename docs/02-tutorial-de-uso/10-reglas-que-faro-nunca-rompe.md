@@ -4,7 +4,7 @@ Estas no son preferencias de diseño. Son límites escritos en el código, y cua
 
 **1. No hay Game Over.** Ningún estado del sistema te saca del curso, te bloquea contenido por inactividad ni borra progreso. El peor escenario posible es *«recalculando tu ruta»*.
 
-**2. El progreso no se pierde.** Ni por faltar un día, ni por faltar tres semanas. Romper una racha deja de *sumar*; nunca *resta*.
+**2. El progreso no se pierde.** Ni por faltar un día, ni por faltar tres semanas. Un día sin estudiar no rompe nada: el bono de ritmo deja de *sumar*; nunca *resta*.
 
 **3. Nunca te mostramos un puntaje de riesgo.** Internamente el sistema calcula estados de fricción para decidir cómo ayudarte. Jamás verás «riesgo de abandono: 87%». Verás «tu ruta necesita atención» y una acción concreta.
 
@@ -12,7 +12,7 @@ Estas no son preferencias de diseño. Son límites escritos en el código, y cua
 
 **5. FARO no hace tu trabajo calificado.** El Mentor explica, da pistas, organiza y acompaña. Si le pides que resuelva un examen o escriba tu entrega, se niega y te ofrece ayuda para hacerlo tú.
 
-**6. El Mentor solo ve siete datos.** Curso, progreso, siguiente actividad, tiempo estimado, tu meta declarada, tu destino en tus palabras, tiempo disponible, impulso, estado de fricción, estilo e idioma. No ve tu nombre, tu correo, tus calificaciones, tu foto ni tu historial completo.
+**6. El Mentor solo ve once datos.** Curso, progreso, siguiente actividad, tiempo estimado, tu meta declarada, tu destino en tus palabras, tiempo disponible, impulso, estado de fricción, estilo e idioma. Si tu institución activó Gemini, también tu mensaje y los últimos 8 turnos de la conversación, a través del servidor de FARO. No ve tu nombre, tu correo, tus calificaciones, tu foto ni tu historial completo. La pantalla siempre dice quién te responde.
 
 **7. FARO no escribe en Canvas.** El permiso para enviar calificaciones existe en el estándar LTI y lo rechazamos explícitamente. Canvas es la fuente de verdad académica; FARO solo lee.
 

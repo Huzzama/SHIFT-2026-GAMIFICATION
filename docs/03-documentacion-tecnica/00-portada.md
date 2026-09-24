@@ -32,6 +32,7 @@ Los capítulos 1 a 5 describen el código. Los capítulos 6 y 7 son procedimient
 | npm | 9+ | Dependencias de la extensión |
 | Chrome / Edge | actual | Cargar la extensión |
 | Una cuenta de Canvas | Free-for-Teacher o institucional | Capítulos 6 y 7 |
+| Una clave de la API de Gemini | Opcional; con estudiantes reales, de un proyecto con facturación activa | El mentor con IA (capítulo 6.9) |
 
 ## Los comandos, en una tabla
 
@@ -44,5 +45,5 @@ Los capítulos 1 a 5 describen el código. Los capítulos 6 y 7 son procedimient
 | `server/` | `cp .env.example .env` | Crea la configuración del backend (luego se edita) |
 | `server/` | `npm run dev` | Backend con recarga automática |
 | `server/` | `npm start` | Backend |
-| `server/` | `npm test` | 20 verificaciones contra un Canvas simulado |
+| `server/` | `npm test` | 36 verificaciones contra un Canvas simulado y un Gemini simulado |
 | `server/` | `npm install` | Solo si quieres `npm run typecheck` ahí (instala `typescript` y `@types/node`; el backend en sí no tiene dependencias) |

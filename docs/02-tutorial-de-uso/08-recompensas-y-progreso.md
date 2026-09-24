@@ -1,4 +1,4 @@
-# 8. Recompensas y Progreso
+# 8. Impacto y Progreso
 
 FARO da puntos por **persistir**, no por hacer clic. Todo lo que otorga puntos exige que algo real haya ocurrido: una actividad terminada, un módulo cerrado, una vuelta después de desconectarse, tres tarjetas de reconexión completadas, una respuesta que a alguien le sirvió.
 
@@ -8,7 +8,7 @@ FARO da puntos por **persistir**, no por hacer clic. Todo lo que otorga puntos e
 |---|---|---|
 | Completar una actividad | **50** | Cada actividad completada de la ruta: entregada en Canvas o terminada en FARO. |
 | Cerrar un módulo | **250** | Cuando todas las actividades del módulo quedan completadas. |
-| Bono de ritmo | **+25** | Cada 3 días consecutivos con actividad. Si se rompe la racha, deja de sumar; nunca resta. |
+| Bono de ritmo | **+25** | Cada 3 días consecutivos con actividad. Un día sin estudiar solo hace que deje de sumar; nunca resta. |
 | Bono de regreso | **+125** | Una vez, cuando vuelves tras 3 o más días sin actividad y completas algo. |
 | Tarjetas de reconexión | **+75** | Al terminar las tres tarjetas (no por acertar a la primera). Una vez al día. |
 | Respuesta marcada como útil | **+25** | Otro estudiante marcó tu respuesta como útil en Comunidad. |
@@ -16,11 +16,21 @@ FARO da puntos por **persistir**, no por hacer clic. Todo lo que otorga puntos e
 
 La escala está pensada para un **semestre**, no para un curso: terminar un curso completo vale entre 2,300 y 2,800 puntos, y un semestre de unos cuatro cursos llega a los 10,000.
 
-## La pantalla de Recompensas
+## La pantalla de Impacto
 
-**1. Tus puntos este semestre.** El número grande suma este curso y los cursos anteriores del semestre. Sube contando cuando entras, y debajo aparece lo que ganaste esta semana (*+250 esta semana*).
+La pestaña se llama **Impacto** porque primero muestra lo que hiciste, y después lo que vale.
 
-**2. Tu siguiente recompensa.** Una sola barra hacia **$200 MXN** (10,000 puntos), con marcas en $50 y $100. Dice cuánto falta y cuánto vale terminar el curso actual: *«Terminar Gestión de Proyectos vale al menos 1,450 puntos más.»* El botón **Seguir avanzando** te lleva a la Ruta: la recompensa siempre apunta de vuelta al curso.
+**1. Tu esfuerzo.** Los **puntos FARO de este semestre**: el número grande suma este curso y los cursos anteriores del semestre. Sube contando cuando entras, y debajo aparece lo que ganaste esta semana (*+250 esta semana*). Abajo, en palabras, lo que hiciste. *Este semestre:*
+
+- *Completaste N actividades*
+- *Terminaste M módulos*
+- *Volviste después de una pausa*
+- *Reconectaste con N juegos de tarjetas*
+- *Estudiaste N días esta semana*
+
+Solo aparecen las líneas que aplican: si no has vuelto de una pausa, esa línea no está.
+
+**2. Tu recompensa: $200 MXN** con la etiqueta **TecmiRewards**. Una sola barra hacia los 10,000 puntos, con marcas en $50 y $100. Dice cuánto falta y cuánto vale terminar el curso actual: *«Terminar Gestión de Proyectos vale al menos 1,450 puntos más.»* El botón **Seguir avanzando** te lleva a la Ruta: la recompensa siempre apunta de vuelta al curso.
 
 **3. Recompensas del semestre.** Tres niveles:
 
@@ -36,7 +46,9 @@ Los niveles **no se compran: se desbloquean**. Llegar a 5,000 no gasta nada. Tú
 
 **Cuando llegas a 10,000**, la tarjeta cambia a **¡Recompensa desbloqueada!** con el botón para canjear $200 MXN.
 
-> **En el prototipo todo esto es simulado:** los montos, los cursos anteriores del semestre y el canje. La pantalla lo dice con una etiqueta y al pie. En producción, la institución define y financia la recompensa.
+> **Es una integración de prototipo con TecmiRewards.** FARO cuenta los puntos; la equivalencia, la elegibilidad, los límites y el canje dependen de las reglas y sistemas de Tecmilenio, y FARO no emite nada. **Los montos, los cursos anteriores del semestre y el canje son simulados** (cada curso anterior simulado trae 16 actividades y 6 módulos). La pantalla lo dice con una etiqueta y al pie. No encontramos una API pública de TecmiRewards, así que la integración real debe validarse con Tecmilenio.
+
+También puedes preguntarle al Mentor por tus puntos: te dice cuántos te faltan y, si quieres, qué pasos concretos te llevan ahí (capítulo 6).
 
 ## Logros de resiliencia
 
@@ -65,6 +77,12 @@ Mientras un logro no está ganado, FARO muestra una **pista** de qué haría fal
 ## Progreso
 
 El porcentaje de progreso **no lo inventa FARO**: sale de Canvas. Es actividades con entrega registrada ÷ actividades totales del curso. Una fecha vencida no cuenta como «hecha», y una actividad que no pertenece a ningún módulo no entra en el conteo.
+
+### Tu ritmo
+
+Una tarjeta con la semana, de lunes a domingo. Un día cuenta como **activo** si FARO registró una sesión o Canvas registró actividad en el curso ese día. Hoy va con un anillo; los días que aún no llegan, punteados. Arriba, *N días activos esta semana*, y la regla: *"Consistencia flexible, no perfección. Un día libre no rompe nada."* No hay racha que perder.
+
+### Impulso
 
 El **impulso (momentum)** es distinto del progreso: mide conexión actual con el aprendizaje, en una ventana de 14 días, con piso en 20. Nunca baja a cero. El progreso ganado no se pierde jamás.
 

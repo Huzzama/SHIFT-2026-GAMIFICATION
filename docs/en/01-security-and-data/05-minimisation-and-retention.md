@@ -38,11 +38,17 @@ The context the model receives is built in a single function and contains exactl
 }
 ```
 
-No name, email, Canvas id, grades, history of other conversations or dropout-risk classification. The friction state is one of five intervention labels (`FLOWING`, `FRICTION`, `POSSIBLE_OVERWHELM`, `DISCONNECTION`, `RECOVERY`), not a score.
+No name, email, Canvas id, grades, photo, history of other conversations or dropout-risk classification. The friction state is one of five intervention labels (`FLOWING`, `FRICTION`, `POSSIBLE_OVERWHELM`, `DISCONNECTION`, `RECOVERY`), not a score.
 
 The only human-authored information is the **destination sentence**, which the student writes freely at onboarding. The example shown is *"Lead my own projects instead of just executing them"*, steering towards a goal, not personal data. In production this sentence must carry an explicit warning: *"do not include anything that identifies you"*. **[pending]**
 
 **[code]** `src/lib/mentorContext.ts`, `src/types/index.ts` (`MentorContext` interface).
+
+**When the mentor uses Gemini** (`VITE_MENTOR_MODE=gemini`), what leaves for Google, always through the backend and never directly from the browser, is: these eleven fields, the student's message and the last 8 turns of the current conversation (role and text, nothing else). The backend does not trust the extension to have done its part: `sanitizeMentorRequest` rebuilds the request with only the eleven fields, checks the enumerated values, caps lengths and drops any extra field **[test]** "mentor: extra fields in the context never reach Gemini", "mentor: history is trimmed to the last 8 turns".
+
+The structured parts never go through the model: the check-in ("I noticed something changed…"), Focus sessions, the weekend plan and answers about points are computed in the extension from real data and are not sent to the model. Their lines do stay in the conversation, so they can travel as part of the last 8 turns if the student then writes an open message. A "do my graded work" request is answered by the backend itself without calling the model **[test]** "mentor: "do my homework" is refused before any model call".
+
+**[code]** `server/src/mentor.ts`.
 
 ## 5.3 Minimisation in Community
 
@@ -61,10 +67,13 @@ Community is the part of FARO with the greatest temptation to collect social dat
 |---|---|---|---|
 | Course snapshot (from Canvas) | Browser memory | While FARO is open | Closing the tab or panel |
 | Canvas request log | Browser memory, 30 entries | While FARO is open | Automatic; never persisted or sent |
-| Purpose, preferences, sessions, profile | `chrome.storage.local` | Until the student deletes it | *Reset* button in Progress, or uninstalling the extension |
+| Purpose, preferences, sessions, profile, plan accepted in the mentor (`weekPlan`) | `chrome.storage.local` | Until the student deletes it | *Reset* button in Progress, or uninstalling the extension; the plan also with *Clear plan* on Home |
+| Conversation with the mentor | The extension's memory | The session | Closing FARO or *Reset*. The backend neither stores nor logs it |
+| What is sent to Gemini (`gemini` mode) | Google | Under the Gemini API terms (chapter 7) | With a paid key, Google logs it for a limited time only for abuse detection and legal requirements |
 | Canvas token | `server/.env` + backend memory | Until rotation or revocation | Edit `.env` and restart; revoke in Canvas |
+| Gemini key | `server/.env` + backend memory | Until rotation or revocation | Edit `.env` and restart; revoke in Google |
 | Launch cache (course id, user id) | Backend memory | Until the process restarts | Restart |
-| Backend logs | Standard output | Defined by the operator | Defined by the operator; they contain no personal data or query strings |
+| Backend logs | Standard output | Defined by the operator | Defined by the operator; they contain no personal data, query strings, request bodies or anything from the mentor conversation |
 
 **Production [pending]:** once PostgreSQL exists, the proposal is:
 
@@ -76,6 +85,6 @@ Community is the part of FARO with the greatest temptation to collect social dat
 
 - **Profile → Canvas** shows, live, every call FARO makes, with its path, status and latency. Transparency is not a document: it is a screen.
 - **Profile → Canvas** shows the LTI scopes FARO refuses.
-- **FARO Mentor** shows, at the bottom, the exact list of what the mentor knows and does not know.
+- **FARO Mentor** says, at the bottom, what the mentor sees and who answers: *"Answers by Gemini, through FARO's server…"* or *"Local mentor: no AI model, nothing leaves your device."* Messages written by Gemini carry a violet ring on FARO's avatar.
 - **Progress → Reset** wipes all of FARO's local state.
 - Nothing in the profile is mandatory. FARO works fully without a name or photo.

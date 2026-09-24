@@ -27,7 +27,7 @@ Seis pestañas abajo (o a la izquierda si la ventana es ancha). **FARO va al cen
 | **Ruta** | ¿A dónde voy? |
 | **FARO** | El mentor: explica, organiza, acompaña |
 | **Comunidad** | ¿Quién va conmigo? |
-| **Recompensas** | Tus puntos FARO |
+| **Impacto** | Tu esfuerzo del semestre, en puntos FARO, y lo cerca que estás de tu recompensa |
 | **Progreso** | Lo que llevas construido |
 
 Dos pantallas más no son pestañas y aparecen cuando hacen falta: **Recuperación**, que se abre desde Inicio cuando vuelves de una ausencia, y **Perfil**, que se abre desde Comunidad. Están fuera de la barra a propósito — FARO no debe sentirse como otra aplicación con secciones que administrar.

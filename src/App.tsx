@@ -198,7 +198,7 @@ export default function App() {
               onOpenProfile={openProfile}
             />
           )}
-          {view === 'mentor' && <MentorView />}
+          {view === 'mentor' && <MentorView onOpenRecovery={() => setView('recovery')} onOpenRewards={() => setView('rewards')} />}
           {view === 'rewards' && <RewardsView onOpenJourney={() => setView('journey')} />}
           {view === 'progress' && (
             <ProgressView

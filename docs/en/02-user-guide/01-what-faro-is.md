@@ -27,7 +27,7 @@ Six tabs at the bottom (or on the left when the window is wide). **FARO sits in 
 | **Journey** | Where am I going? |
 | **FARO** | The mentor: explains, organises, accompanies |
 | **Community** | Who is with me? |
-| **Rewards** | Your FARO points |
+| **Impact** | Your semester's effort, in FARO points, and how close you are to your reward |
 | **Progress** | What you have built |
 
 Two more screens are not tabs and appear when needed: **Recovery**, which opens from Home when you come back from an absence, and **Profile**, which opens from Community. They are kept out of the bar on purpose — FARO must not feel like yet another app with sections to manage.

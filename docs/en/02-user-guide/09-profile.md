@@ -5,7 +5,7 @@
 Two ways, both valid:
 
 1. **From Community** — tap your avatar or your name on the presence card, above the feed. It opens your public profile: what others see of you.
-2. **From the bottom menu** — the Profile tab, next to Rewards.
+2. **From the bottom menu** — the Profile tab, next to Impact.
 
 ## What is inside
 

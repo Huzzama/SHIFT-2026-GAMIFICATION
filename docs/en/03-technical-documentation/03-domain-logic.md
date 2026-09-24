@@ -134,7 +134,7 @@ Nothing here touches dates or academic rules. It only changes the size and shape
 
 `computePoints` also returns `thisWeek`: what was earned in the last 7 days through actions taken in FARO (sessions, cards, and the comeback bonus if one of them earned it).
 
-`learningRhythm(sessions)` counts consecutive days with a session, ending today. Breaking the streak stops adding; it never subtracts.
+`learningRhythm(sessions)` counts consecutive days with a session, ending today, and only feeds the rhythm bonus: a day without a session makes it stop adding; it never subtracts. What the student sees is not that count but the `weekRhythm` week (3.13).
 
 ## 3.5b `rewards.ts` — the semester reward
 
@@ -188,4 +188,64 @@ A `StudySession` is what FARO notes down when the student marks a step as done. 
 
 ## 3.9 `mentorContext.ts` — the privacy boundary
 
-One function, `buildMentorContext`, that produces the eleven fields of `MentorContext`. If a piece of data is not built here, the mentor does not receive it. It does not read `Profile`. It is the only file Book 1 cites as the mentor's data contract.
+One function, `buildMentorContext`, that produces the eleven fields of `MentorContext`. If a piece of data is not built here, the mentor does not receive it. It does not read `Profile`. It is the only file Book 1 cites as the mentor's data contract. In `gemini` mode, the backend applies the same contract again (`sanitizeMentorRequest`, chapter 5): the extension is not the only barrier.
+
+## 3.10 `timeSession.ts` — "how much time do you have?"
+
+Turns a number of minutes into a session. Used by Home's picker (5 / 10 / 20 / 30+), the Mentor's Focus mode (5 / 10 / 15 / 30) and the weekend plan, so the three always agree.
+
+`sessionRules = { REVIEW_MINUTES: 3, OPEN_ENDED_MINUTES: 45 }` — the review counts as 3 minutes; the "30+" option plans 45.
+
+**`openSteps(journey)`** — open activities in the order FARO would do them: `missed` first, then `current` and `upcoming` in route order. `locked` ones are left out.
+
+**`buildTimeSession(journey, minutes, { reviewAvailable })`**:
+
+```text
+reviewAvailable and minutes ≥ 3             → first { review, 3 min }
+for each step of openSteps, in order:
+  fits in what is left                      → added
+  does not fit                              → stop (never skips to a shorter later one)
+no step added and ≥ 5 min left              → { partial: "the first N min" of the first step }
+```
+
+It never skips ahead: a module's quiz does not come before the exercise it checks. `sessionMinutes(items)` adds the session up. Minutes are FARO's estimates; the UI says "about".
+
+**`planDays(journey, days)`** — e.g. Saturday 60 and Sunday 45. Steps go in route order and are never repeated across days; a day stops at the first step that does not fit, so the plan stays smaller than the time, on purpose. A step longer than an empty day's whole budget still takes that day rather than disappearing. A day with 0 minutes stays empty. The result is a `DayPlan[]`; if the student accepts it, it is saved as a `WeekPlan` with `setWeekPlan` (storage key `weekPlan`) and shows on Home.
+
+## 3.11 `rewardPath.ts` — the realistic path to the next milestone
+
+**`pathToPoints(journey, gap)`** answers "what do I need for the next TecmiRewards milestone?" with the same numbers as Impact, never with a model's.
+
+- Walks everything not completed in route order, `missed` first. **Locked steps are included**: they open as the route advances, and leaving them out would understate the course.
+- Each step adds `POINTS_PER_ACTIVITY` (50); if it is its module's last open step, it also adds `POINTS_PER_MODULE` (250).
+- Stops when the points cover `gap`.
+- Returns `{ steps, modules, points, minutes, reachable }`. `reachable: false` when finishing everything left in the course still falls short; the Mentor says so, without dressing it up.
+
+**Only guaranteed points count.** Rhythm, comeback and review-card bonuses would shorten the path, but promising them would be a nudge dressed up as a fact.
+
+## 3.12 `teach.ts` — Teach me without a model
+
+The loop: **explain briefly → one question → answer → adapt.** The review bank (`data/reviewBank.ts`) already holds, per module, a question, its options and a short explanation: a micro-lesson.
+
+- **`teachTopics(journey, bank, moduleNames)`** — modules with questions; the ones the student has touched (`touchedModules`) first, then the rest in course order.
+- **`lessonQuestions(bank, moduleId)`** — the module's questions, in order.
+- **`answerTeach(bank, state, option)`** with `TeachState = { moduleId, index, tried }`:
+
+```text
+right option → { right, next: the module's next question | null }
+wrong option → { wrong, question, remaining: options without those already tried }
+```
+
+With `next`, the Mentor asks the second, slightly different question; with `null`, it suggests applying it to the next step. With `wrong`, it repeats the key idea (`explain`) and asks again without the option already tried. No points are at stake.
+
+Lessons exist only for the bank's course (`REVIEW_BANK_COURSE_ID`). In `gemini` mode, open topics go to the backend with `mode: 'teach'` (the prompt's TEACH MODE, chapter 5).
+
+## 3.13 `rhythm.ts` — the rhythm week
+
+**`weekRhythm(sessions, activity, now)`** — the current week, Monday to Sunday, as seven `RhythmDay { weekday (0 = Monday), date, active, today, future }`. A day is `active` if FARO recorded a session **or** Canvas recorded course activity that day. Days after today are `future`, not "missed".
+
+**`activeDays(week)`** — how many active days the week has.
+
+The store exposes `week` (derived from the sessions and `snapshot.activity`). It feeds Home's rhythm tile (*"N/7 · active days this week"*), Progress's *Your rhythm* card and Impact's *"Studied N days this week"* line.
+
+**Product rule:** flexible consistency. For someone who works, five days out of seven is a great week, and a gap on Wednesday breaks nothing. There is no streak to lose.

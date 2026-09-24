@@ -1,9 +1,14 @@
 /**
- * Rewards - studying consistently brings a real reward closer.
+ * Your Impact (the Rewards tab) - what the effort was, then what it unlocks.
+ *
+ * FARO does not pretend to be a payment system: it counts FARO Points, and
+ * the reward is framed as TecmiRewards, whose equivalence, eligibility and
+ * redemption belong to Tecmilenio. The prototype only shows the flow.
  *
  * Top to bottom:
  *
- *   1. The semester balance, counting up, with what this week added.
+ *   1. Your effort: the semester's FARO Points, counting up, and what they
+ *      stand for — activities, modules, a comeback, this week's rhythm.
  *   2. The next reward: one track to $200 MXN, with the $50 and $100 tiers
  *      marked on it, how far is left, and what finishing this course is
  *      worth - so the reward always points back at the course.
@@ -19,13 +24,14 @@
 import { useState } from 'react'
 import { Icon } from '@/components/Icon'
 import { useCountUp } from '@/components/useCountUp'
+import { activeDays } from '@/lib/rhythm'
 import { useStore } from '@/state/store'
 import { previousCourses, semesterLabel } from '@/data/rewards.mock'
 import { canRedeem, remainingCoursePoints, rewardsConfig, rewardTiers } from '@/lib/rewards'
 import type { RewardTier } from '@/types'
 
 export function RewardsView({ onOpenJourney }: { onOpenJourney: () => void }) {
-  const { t, lang, points, semester, journey, redeem } = useStore()
+  const { t, lang, points, semester, journey, redeem, week } = useStore()
   const r = t.rewards
   const [confirm, setConfirm] = useState<RewardTier | null>(null)
 
@@ -35,6 +41,17 @@ export function RewardsView({ onOpenJourney }: { onOpenJourney: () => void }) {
   const goalTier = rewardTiers[rewardTiers.length - 1]
   const goalReached = semester.total >= goalTier.points
   const fmt = (n: number) => n.toLocaleString(lang === 'es' ? 'es-MX' : 'en-US')
+
+  const prevActivities = previousCourses.reduce((s, c) => s + c.activities, 0)
+  const prevModules = previousCourses.reduce((s, c) => s + c.modules, 0)
+  const daysThisWeek = activeDays(week)
+  const impact = [
+    r.impact.activities(points.activityCount + prevActivities),
+    r.impact.modules(points.moduleCount + prevModules),
+    ...(points.comebackEarned ? [r.impact.comeback] : []),
+    ...(points.reviewSets > 0 ? [r.impact.reviews(points.reviewSets)] : []),
+    ...(daysThisWeek > 0 ? [r.impact.week(daysThisWeek)] : []),
+  ]
 
   const doRedeem = (tier: RewardTier) => {
     redeem(tier)
@@ -50,9 +67,20 @@ export function RewardsView({ onOpenJourney }: { onOpenJourney: () => void }) {
           <span className="rw-tag">{r.simulated}</span>
         </div>
         <div className="rw-hero__value">{fmt(shownTotal)}</div>
+        <div className="rw-hero__label">{r.points}</div>
         <div className="rw-hero__sub">
           {semesterLabel[lang]}
           {points.thisWeek > 0 && <span className="rw-hero__week">{r.thisWeek(points.thisWeek)}</span>}
+        </div>
+        <div className="rw-impact">
+          <div className="rw-impact__lead">{r.impact.lead}</div>
+          <ul>
+            {impact.map((line) => (
+              <li key={line}>
+                <Icon name="check" size={16} /> {line}
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -80,7 +108,9 @@ export function RewardsView({ onOpenJourney }: { onOpenJourney: () => void }) {
       ) : (
         <section className="rw-next">
           <div className="rw-next__eyebrow">{r.next.eyebrow}</div>
-          <div className="rw-next__reward">{r.next.reward(goalTier.mxn)}</div>
+          <div className="rw-next__reward">
+            {r.next.reward(goalTier.mxn)} <span className="rw-program">{r.next.program}</span>
+          </div>
           <div className="rw-next__of">{r.next.of(semester.total, semester.goal)}</div>
 
           <div className="rw-track" role="img" aria-label={r.next.percent(semester.percent)}>

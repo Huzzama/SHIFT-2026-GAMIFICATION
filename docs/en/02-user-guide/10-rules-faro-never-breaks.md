@@ -4,7 +4,7 @@ These are not design preferences. They are limits written in the code, and any n
 
 **1. There is no Game Over.** No system state kicks you out of the course, locks content for inactivity or erases progress. The worst possible scenario is *"recalculating your route"*.
 
-**2. Progress is not lost.** Not for missing a day, not for missing three weeks. Breaking a streak stops *adding*; it never *subtracts*.
+**2. Progress is not lost.** Not for missing a day, not for missing three weeks. A day without study breaks nothing: the rhythm bonus stops *adding*; it never *subtracts*.
 
 **3. We never show you a risk score.** Internally the system computes friction states to decide how to help you. You will never see "dropout risk: 87%". You will see "your route needs attention" and a concrete action.
 
@@ -12,7 +12,7 @@ These are not design preferences. They are limits written in the code, and any n
 
 **5. FARO does not do your graded work.** The Mentor explains, gives hints, organises and accompanies. If you ask it to solve an exam or write your submission, it refuses and offers help so you can do it yourself.
 
-**6. The Mentor sees only eleven fields.** Course, progress, next activity, estimated time, your declared goal, your destination in your words, available time, momentum, friction state, style and language. It does not see your name, your email, your grades, your photo or your full history.
+**6. The Mentor sees only eleven fields.** Course, progress, next activity, estimated time, your declared goal, your destination in your words, available time, momentum, friction state, style and language. If your institution turned on Gemini, also your message and the last 8 turns of the conversation, through FARO's server. It does not see your name, your email, your grades, your photo or your full history. The screen always says who is answering.
 
 **7. FARO does not write to Canvas.** The permission to submit grades exists in the LTI standard and we explicitly refuse it. Canvas is the academic source of truth; FARO only reads.
 
