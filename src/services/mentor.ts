@@ -8,8 +8,13 @@
  *  - `HttpMentorService`: POST /api/mentor on the FARO backend, which calls
  *    Gemini with the key it holds. Only the eleven-field context, the
  *    message and the last turns of this conversation are sent.
- *  - `HybridMentorService`: Gemini when `VITE_MENTOR_MODE=gemini`, the local
- *    mentor whenever the backend or the model cannot answer.
+ *  - `HybridMentorService`: Gemini through the backend, the local mentor
+ *    whenever the backend or the model cannot answer.
+ *
+ * Which one runs is decided at run time (`VITE_MENTOR_MODE`, default `auto`):
+ * `auto` asks the backend's `/health` whether it has a mentor configured and
+ * uses Gemini if so — start the server with a key and the extension picks it
+ * up, no rebuild. `local` never leaves the device; `gemini` always tries.
  *
  * The structured parts of the mentor (the check-in after a gap, Focus,
  * planning, points) are not here: they are computed in the view from real
@@ -42,9 +47,33 @@ export interface MentorService {
   send(input: MentorInput): Promise<MentorReply>
 }
 
-/** Which mentor the build uses. Only `gemini` ever sends anything off the device. */
-export const mentorMode: 'local' | 'gemini' =
-  (import.meta.env.VITE_MENTOR_MODE as string | undefined) === 'gemini' ? 'gemini' : 'local'
+const envMentorMode = (import.meta.env.VITE_MENTOR_MODE as string | undefined) ?? 'auto'
+
+/** How the build chooses the mentor. Only a Gemini-backed answer ever leaves the device. */
+export const mentorMode: 'auto' | 'local' | 'gemini' =
+  envMentorMode === 'gemini' || envMentorMode === 'local' ? envMentorMode : 'auto'
+
+export type MentorAvailability = 'checking' | 'gemini' | 'local'
+
+let probe: { at: number; result: Promise<boolean> } | null = null
+const PROBE_TTL_MS = 30_000
+
+/**
+ * Does the FARO backend have Gemini configured? One small GET to /health,
+ * cached for 30 s so opening the mentor never waits on it twice. Nothing
+ * about the student is sent.
+ */
+export function probeGemini(force = false): Promise<boolean> {
+  if (mentorMode === 'local') return Promise.resolve(false)
+  if (mentorMode === 'gemini') return Promise.resolve(true)
+  if (!force && probe && Date.now() - probe.at < PROBE_TTL_MS) return probe.result
+  const result = fetch(`${canvasConfig.apiUrl}/health`, { signal: AbortSignal.timeout(2_000) })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((body: { mentor?: unknown } | null) => !!body?.mentor)
+    .catch(() => false)
+  probe = { at: Date.now(), result }
+  return result
+}
 
 /* ------------------------------------------------------------- guardrails */
 
@@ -178,10 +207,26 @@ export class HybridMentorService implements MentorService {
   }
 }
 
+/** Asks `/health` first (cached); Gemini when the backend has it, the local mentor otherwise. */
+export class AutoMentorService implements MentorService {
+  private readonly hybrid: MentorService
+  private readonly local: MentorService
+
+  constructor(hybrid: MentorService, local: MentorService) {
+    this.hybrid = hybrid
+    this.local = local
+  }
+
+  async send(input: MentorInput): Promise<MentorReply> {
+    return (await probeGemini()) ? this.hybrid.send(input) : this.local.send(input)
+  }
+}
+
+const local = new LocalMentorService()
+const hybrid = new HybridMentorService(new HttpMentorService(canvasConfig.apiUrl), local)
+
 export const mentorService: MentorService =
-  mentorMode === 'gemini'
-    ? new HybridMentorService(new HttpMentorService(canvasConfig.apiUrl), new LocalMentorService())
-    : new LocalMentorService()
+  mentorMode === 'local' ? local : mentorMode === 'gemini' ? hybrid : new AutoMentorService(hybrid, local)
 
 /** Kept for callers that want the style list in display order. */
 export const mentorStyles: MentorStyle[] = ['direct', 'encouraging', 'detailed', 'friendly', 'challenge']

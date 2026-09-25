@@ -32,7 +32,7 @@
 │                                                                          │
 │   state/store.tsx   chrome.storage.local (propósito, sesiones, perfil)    │
 │   services/mentor   LocalMentorService · HybridMentorService (Gemini vía │
-│                     backend + respaldo local) según VITE_MENTOR_MODE     │
+│                     backend + respaldo local) · Auto (según /health)     │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -73,14 +73,16 @@ Lo que **no** cambia entre modos: `client.ts` (el mapeo), `lib/` (todas las regl
 
 El mentor tiene su propio interruptor, independiente del de Canvas:
 
-| | `local` | `gemini` |
-|---|---|---|
-| Se elige con | `VITE_MENTOR_MODE=local` (por defecto) | `VITE_MENTOR_MODE=gemini` |
-| Quién responde la conversación abierta | `LocalMentorService`, en el dispositivo | `HybridMentorService`: `HttpMentorService` → `POST /api/mentor` → Gemini; si falla, `LocalMentorService` |
-| Qué sale del dispositivo | Nada | Contexto de 11 campos, el mensaje y los últimos 8 turnos, al backend |
-| Necesita backend | No | Sí, con `GEMINI_API_KEY` (Canvas puede no estar configurado) |
+| | `auto` | `local` | `gemini` |
+|---|---|---|---|
+| Se elige con | `VITE_MENTOR_MODE=auto` (por defecto) | `VITE_MENTOR_MODE=local` | `VITE_MENTOR_MODE=gemini` |
+| Quién responde la conversación abierta | `AutoMentorService`: pregunta `GET /health` (`probeGemini`, 2 s, guardado 30 s, sin datos del estudiante). Si el servidor informa un mentor, como `gemini`; si no responde o no tiene clave, `LocalMentorService` | `LocalMentorService`, en el dispositivo | `HybridMentorService`: `HttpMentorService` → `POST /api/mentor` → Gemini; si falla, `LocalMentorService` |
+| Qué sale del dispositivo | La consulta a `/health`; con Gemini, lo mismo que `gemini` | Nada (ni la consulta a `/health` para el mentor) | Contexto de 11 campos, el mensaje y los últimos 8 turnos, al backend |
+| Necesita backend | No; lo aprovecha si tiene `GEMINI_API_KEY` | No | Sí, con `GEMINI_API_KEY` (Canvas puede no estar configurado) |
 
-En ambos modos, los momentos estructurados del mentor (registro de ánimo, Enfoque, Volver, plan de fin de semana, puntos, Enséñame local) se calculan en la extensión con `lib/`; nunca los decide un modelo.
+Con `auto`, poner la clave en `server/.env` y arrancar el servidor basta: la extensión usa Gemini sin reconstruir ni `.env.local`. `MentorView` repite la comprobación cada vez que se abre, y el pie dice quién responde según ese resultado. Una institución que no apruebe el mentor con IA construye con `VITE_MENTOR_MODE=local` (o no le da `GEMINI_API_KEY` al servidor).
+
+En los tres modos, los momentos estructurados del mentor (registro de ánimo, Enfoque, Volver, plan de fin de semana, puntos, Enséñame local) se calculan en la extensión con `lib/`; nunca los decide un modelo.
 
 ## 1.4 El flujo de una apertura
 

@@ -106,7 +106,7 @@ function BadgeList({
       {items.map((b) => (
         <li key={b.id} className={`badge${b.earned ? ' badge--earned' : ''}`}>
           <span className="badge__mark" aria-hidden="true">
-            <Icon name={b.earned ? 'trophy' : 'flag'} size={18} />
+            <Icon name={b.earned ? 'beacon' : 'stateBeaconNotYet'} size={20} tone="none" />
           </span>
           <div>
             <div className="badge__title">{b.title}</div>

@@ -27,6 +27,7 @@ const startedAt = Date.now()
 export function buildApp({ env, fetchImpl, geminiFetch, log }: AppOptions): HttpApp {
   const app = new HttpApp({
     allowedOrigins: env.allowedOrigins,
+    allowExtensionOrigins: env.allowExtensionOrigins,
     rateLimitPerMinute: env.rateLimitPerMinute,
     log: log ?? ((line) => console.log(JSON.stringify({ t: new Date().toISOString(), ...line }))),
   })

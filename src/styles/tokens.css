@@ -93,3 +93,24 @@
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 26px rgba(0, 0, 0, 0.4);
   --shadow-float: 0 -6px 22px rgba(0, 0, 0, 0.45);
 }
+
+/* FARO icon accents (Icon.tsx / faroGlyphs.tsx). One colour per glyph, and it
+   means something: green = progress, orange = momentum, violet = reward.
+   Dark brand chrome (sidebar, hero, the FARO tab) switches to mint. */
+:root {
+  --faro-accent: var(--forest-500);
+  --faro-done: var(--forest-600);
+  --faro-surface: var(--surface);
+}
+:root[data-theme='dark'] {
+  --faro-accent: var(--mint-500);
+  --faro-done: var(--mint-500);
+}
+.fi--momentum { --faro-accent: var(--orange-500); }
+.fi--reward { --faro-accent: var(--violet-500); }
+:root[data-theme='dark'] .fi--reward { --faro-accent: #b596e4; }
+.fi--none { --faro-accent: currentColor; --faro-accent-line: currentColor; --faro-done: currentColor; }
+/* Where a glyph sits on dark brand chrome the accent turns mint; on the
+   constant light tints (recalc card) it stays forest in both themes. */
+.sidebar, .hero, .tab__beacon, .rcv-hero, .rw-next--unlocked, .navitem--active { --faro-accent: var(--mint-500); --faro-done: var(--mint-500); }
+.recalc { --faro-accent: var(--forest-500); }

@@ -29,7 +29,7 @@ export function StatCard({
   return (
     <button className={`statcard tint--${tone}`} onClick={onClick} disabled={!onClick}>
       <span className={`ibadge ibadge--${tone}`}>
-        <Icon name={icon} size={22} />
+        <Icon name={icon} size={22} tone="none" />
       </span>
       <span className="statcard__text">
         <span className="statcard__eyebrow">{eyebrow}</span>
@@ -61,7 +61,7 @@ export function PillarCard({
   return (
     <button className={`pillar tint--${tone}`} onClick={onClick}>
       <span className={`ibadge ibadge--${tone}`}>
-        <Icon name={icon} size={22} />
+        <Icon name={icon} size={22} tone="none" />
       </span>
       <span className={`pillar__title pillar__title--${tone}`}>{title}</span>
       <span className="pillar__body">{body}</span>

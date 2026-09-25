@@ -44,7 +44,7 @@ La única información de origen humano es la **frase de destino**, que el estud
 
 **[código]** `src/lib/mentorContext.ts`, `src/types/index.ts` (interfaz `MentorContext`).
 
-**Cuando el mentor usa Gemini** (`VITE_MENTOR_MODE=gemini`), lo que sale hacia Google, siempre a través del backend y nunca directo desde el navegador, es: estos once campos, el mensaje del estudiante y los últimos 8 turnos de la conversación actual (rol y texto, nada más). El backend no confía en que la extensión haya hecho bien su parte: `sanitizeMentorRequest` reconstruye la petición con solo los once campos, comprueba los valores enumerados, recorta longitudes y descarta cualquier campo extra **[prueba]** "mentor: extra fields in the context never reach Gemini", "mentor: history is trimmed to the last 8 turns".
+**Cuando el mentor usa Gemini** (el backend tiene `GEMINI_API_KEY` y la extensión no se construyó con `VITE_MENTOR_MODE=local`), lo que sale hacia Google, siempre a través del backend y nunca directo desde el navegador, es: estos once campos, el mensaje del estudiante y los últimos 8 turnos de la conversación actual (rol y texto, nada más). El backend no confía en que la extensión haya hecho bien su parte: `sanitizeMentorRequest` reconstruye la petición con solo los once campos, comprueba los valores enumerados, recorta longitudes y descarta cualquier campo extra **[prueba]** "mentor: extra fields in the context never reach Gemini", "mentor: history is trimmed to the last 8 turns".
 
 Lo estructurado nunca pasa por el modelo: el registro de ánimo ("Noté que algo cambió…"), las sesiones de Enfoque, el plan de fin de semana y las respuestas sobre puntos se calculan en la extensión con datos reales y no se envían al modelo. Sus líneas sí quedan en la conversación, así que pueden viajar como parte de los últimos 8 turnos si después el estudiante escribe un mensaje abierto. Una petición de "haz mi trabajo calificado" la contesta el propio backend sin llamar al modelo **[prueba]** "mentor: "do my homework" is refused before any model call".
 
@@ -69,7 +69,7 @@ Comunidad es la parte de FARO con más tentación de recoger datos sociales, y p
 | Registro de peticiones a Canvas | Memoria del navegador, 30 entradas | Mientras FARO está abierto | Automático; nunca se persiste ni se envía |
 | Propósito, preferencias, sesiones, perfil, plan aceptado en el mentor (`weekPlan`) | `chrome.storage.local` | Hasta que el estudiante lo borre | Botón *Restablecer* en Progreso, o desinstalar la extensión; el plan también con *Quitar plan* en Inicio |
 | Conversación con el mentor | Memoria de la extensión | La sesión | Al cerrar FARO o con *Restablecer*. El backend no la guarda ni la registra |
-| Lo enviado a Gemini (modo `gemini`) | Google | Según los términos de la API de Gemini (capítulo 7) | Con clave de pago, Google lo registra por tiempo limitado solo para detectar abuso y por requisitos legales |
+| Lo enviado a Gemini (cuando responde Gemini) | Google | Según los términos de la API de Gemini (capítulo 7) | Con clave de pago, Google lo registra por tiempo limitado solo para detectar abuso y por requisitos legales |
 | Token de Canvas | `server/.env` + memoria del backend | Hasta rotación o revocación | Editar `.env` y reiniciar; revocar en Canvas |
 | Clave de Gemini | `server/.env` + memoria del backend | Hasta rotación o revocación | Editar `.env` y reiniciar; revocar en Google |
 | Caché del lanzamiento (id de curso, id de usuario) | Memoria del backend | Hasta reiniciar el proceso | Reiniciar |

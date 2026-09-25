@@ -184,6 +184,7 @@
 .banner__cta { display: inline-flex; align-items: center; gap: 6px; margin-top: var(--space-3); font-size: var(--text-sm); font-weight: 650; color: var(--forest-700); }
 .banner--welcome { background: var(--mint-100); border-color: var(--mint-400); }
 .banner--welcome:hover { border-color: var(--forest-500); }
+.banner--welcome .banner__title { color: var(--ink-900); }
 .banner--welcome .banner__body { color: var(--ink-700); }
 
 /* Next best action -------------------------------------------------------- */
@@ -211,24 +212,26 @@
   padding: var(--space-3) var(--space-4);
   color: var(--ink-900);
 }
-.recalc__icon { color: var(--orange-600); flex: none; margin-top: 1px; }
+.recalc__icon { color: var(--ink-900); flex: none; margin-top: 1px; }
 .recalc__title { font-weight: 700; font-size: var(--text-sm); }
 .recalc__body { font-size: var(--text-sm); color: var(--ink-700); margin-top: 2px; line-height: 1.5; }
 
 .track { list-style: none; margin: 0; padding: 0; position: relative; }
 .track::before { content: ''; position: absolute; left: 11px; top: 10px; bottom: 10px; width: 2px; background: var(--border); }
 .stop { position: relative; padding: 0 0 var(--space-4) var(--space-6); }
-.stop__dot { position: absolute; left: 4px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); border: 2px solid var(--border); }
+.stop__node { position: absolute; left: 0; top: -2px; width: 24px; height: 24px; display: grid; place-items: center; color: var(--text-3); background: radial-gradient(circle, var(--surface) 7px, transparent 7.5px); }
+.stop__ship { vertical-align: -2px; color: var(--forest-700); }
+:root[data-theme='dark'] .stop__ship { color: var(--mint-400); }
 .stop__title { font-size: var(--text-sm); font-weight: 560; }
 .stop__meta { font-size: var(--text-xs); color: var(--text-3); margin-top: 2px; }
-.stop--completed .stop__dot { background: var(--forest-600); border-color: var(--forest-600); }
+.stop--completed .stop__node { color: var(--faro-done); }
 .stop--completed .stop__title { color: var(--text-3); }
-.stop--missed .stop__dot { border-color: var(--orange-500); background: var(--orange-100); }
-.stop--current .stop__dot { border-color: var(--forest-700); background: var(--mint-500); box-shadow: 0 0 0 4px var(--mint-100); }
+.stop--missed .stop__node { color: var(--orange-500); }
+.stop--current .stop__node { color: var(--text-1); background: radial-gradient(circle, var(--surface) 9px, transparent 9.5px); }
 .stop--current .stop__title { font-weight: 700; color: var(--forest-700); }
 .stop--locked .stop__title { color: var(--text-4); }
 .stop--locked .stop__meta { color: var(--text-4); }
-.stop--checkpoint .stop__dot { border-radius: 4px; }
+.stop--locked .stop__node { color: var(--text-4); }
 .checkpoint-flag { display: inline-block; margin-left: var(--space-2); font-size: var(--text-xs); color: var(--violet-600); background: var(--violet-100); border-radius: 999px; padding: 1px 8px; font-weight: 600; }
 
 .module-head { font-size: var(--text-xs); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); font-weight: 700; margin: var(--space-4) 0 var(--space-2); }
@@ -1551,3 +1554,18 @@
 @media (prefers-reduced-motion: reduce) {
   .mentor__choices, .timepick__session { animation: none; }
 }
+
+/* Dark theme: forest text on the dark page was unreadable in these spots. */
+:root[data-theme='dark'] .tab--active { color: var(--mint-400); }
+:root[data-theme='dark'] .stop--current .stop__title { color: var(--mint-400); }
+
+/* Progress → Demo tools (reset, comeback scenario). Orange, never red: even
+   the destructive button stays inside FARO's palette. */
+.demo__body { margin: 6px 0 var(--space-3); line-height: 1.55; }
+.demo__hint { margin: 6px 0 var(--space-3); font-size: var(--text-xs); color: var(--text-3); line-height: 1.5; }
+.demo__hint:last-child { margin-bottom: 0; }
+.demo__on { margin: 0 0 var(--space-3); padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); background: var(--orange-100); color: var(--ink-900); font-size: var(--text-sm); line-height: 1.45; }
+.demo__confirm { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--orange-500); border-radius: var(--radius-md); font-size: var(--text-sm); font-weight: 600; color: var(--text-1); }
+.demo__confirm .btn { flex: 1; }
+.btn--danger { background: var(--orange-600); color: var(--white); }
+.btn--danger:hover { background: var(--orange-500); }

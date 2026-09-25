@@ -25,15 +25,15 @@ Tres puntos de la nueva ley que tocan directamente a FARO:
 | **Finalidad** | Usar los datos solo para lo informado | Cada ruta de Canvas tiene un propósito escrito junto a ella (`server/src/allowlist.ts`, campo `purpose`); no hay uso secundario | [código] |
 | **Lealtad** | No obtener datos por medios engañosos | No hay rastreo fuera de las 6 rutas; no hay *dark patterns* para obtener el perfil (todo es opcional) | [código] |
 | **Proporcionalidad** | Solo los datos necesarios | Capítulo 5: conteos de vistas descartados, nombre y avatar de `users/self` descartados, mentor con 11 campos revalidados en el backend e historial limitado a 8 turnos | [código] [prueba] |
-| **Responsabilidad** | Velar por el cumplimiento y poder demostrarlo | Este libro; las 36 pruebas automáticas; la lista de verificación del capítulo 9 | [prueba] |
+| **Responsabilidad** | Velar por el cumplimiento y poder demostrarlo | Este libro; las 38 pruebas automáticas; la lista de verificación del capítulo 9 | [prueba] |
 
 ## 7.3 Datos sensibles
 
 FARO **no trata datos sensibles** según la definición de la ley (origen étnico, salud, creencias, opiniones políticas, preferencia sexual, datos genéticos). Dos matices que la institución debe considerar:
 
-- El estado *"pasó algo en mi vida"* (menos tiempo, abrumado, necesito una pausa) es autodeclarado, se usa solo para elegir una intervención y **no se persiste**. No es parte de los once campos del contexto. Si el estudiante lo elige en el registro de ánimo del mentor, esa elección queda como un turno de la conversación, y en modo `gemini` puede viajar entre los últimos 8 turnos de un mensaje abierto posterior. No es un dato de salud, pero el aviso de privacidad debe mencionarlo para no dejar dudas.
-- La **frase de destino** es texto libre. Si un estudiante escribiera ahí un dato sensible, FARO lo guardaría localmente y lo incluiría en el contexto del mentor (y, en modo `gemini`, llegaría a Google). Mitigación: advertencia en pantalla **[pendiente]** y política de no almacenar conversaciones.
-- Los **mensajes al mentor** también son texto libre. En modo `gemini` van a Google a través del backend. Si un estudiante menciona una crisis o querer hacerse daño, las reglas del mentor le piden responder con cuidado, dejar de hablar de estudio y animarlo a contactar de inmediato al servicio de apoyo estudiantil de la universidad o a servicios de emergencia. FARO no es un servicio de apoyo psicológico; la institución debe decidir qué canal nombrar.
+- El estado *"pasó algo en mi vida"* (menos tiempo, abrumado, necesito una pausa) es autodeclarado, se usa solo para elegir una intervención y **no se persiste**. No es parte de los once campos del contexto. Si el estudiante lo elige en el registro de ánimo del mentor, esa elección queda como un turno de la conversación, y cuando responde Gemini puede viajar entre los últimos 8 turnos de un mensaje abierto posterior. No es un dato de salud, pero el aviso de privacidad debe mencionarlo para no dejar dudas.
+- La **frase de destino** es texto libre. Si un estudiante escribiera ahí un dato sensible, FARO lo guardaría localmente y lo incluiría en el contexto del mentor (y, cuando responde Gemini, llegaría a Google). Mitigación: advertencia en pantalla **[pendiente]** y política de no almacenar conversaciones.
+- Los **mensajes al mentor** también son texto libre. Cuando responde Gemini, van a Google a través del backend. Si un estudiante menciona una crisis o querer hacerse daño, las reglas del mentor le piden responder con cuidado, dejar de hablar de estudio y animarlo a contactar de inmediato al servicio de apoyo estudiantil de la universidad o a servicios de emergencia. FARO no es un servicio de apoyo psicológico; la institución debe decidir qué canal nombrar.
 
 ## 7.4 Consentimiento para el piloto
 
@@ -60,7 +60,7 @@ Para un piloto con cinco a treinta estudiantes, se recomienda consentimiento exp
 ## 7.6 Transferencias
 
 - **A Canvas (Instructure):** FARO no transfiere nada a Canvas; solo lee. La relación de la institución con Instructure ya está cubierta por su contrato existente.
-- **Al proveedor del modelo de IA (Google, API de Gemini):** solo si la institución activa `VITE_MENTOR_MODE=gemini` y pone `GEMINI_API_KEY` en el backend. Es una transferencia de los 11 campos del contexto, el mensaje del estudiante y los últimos 8 turnos de la conversación actual; nunca nombre, correo, ids de Canvas, calificaciones ni foto. Debe constar en el aviso de privacidad. Las condiciones de uso de esos datos dependen del tipo de clave (sección 7.8). Con el modo por omisión (`local`) no hay transferencia.
+- **Al proveedor del modelo de IA (Google, API de Gemini):** solo si el backend tiene `GEMINI_API_KEY` (con el modo por omisión, `VITE_MENTOR_MODE=auto`, la extensión lo detecta sola; con `gemini`, siempre lo intenta). Una institución que no apruebe el mentor con IA construye con `VITE_MENTOR_MODE=local` o no le da clave al servidor. Es una transferencia de los 11 campos del contexto, el mensaje del estudiante y los últimos 8 turnos de la conversación actual; nunca nombre, correo, ids de Canvas, calificaciones ni foto. Debe constar en el aviso de privacidad. Las condiciones de uso de esos datos dependen del tipo de clave (sección 7.8). Con `VITE_MENTOR_MODE=local`, o sin clave en el servidor, no hay transferencia.
 - **Entre dispositivos del estudiante [pendiente]:** cuando exista el backend con base de datos, el estado de FARO se sincronizará a través de él. Es tratamiento por el encargado, no transferencia a tercero.
 
 ## 7.7 Políticas institucionales de Canvas

@@ -30,7 +30,7 @@ faro/
 │   │   ├── teach.ts         teachTopics · lessonQuestions · answerTeach
 │   │   ├── rhythm.ts        learningRhythm · weekRhythm · activeDays
 │   │   └── …                friction, journey, recoveryPlanner, points, rewards, mentorContext…
-│   ├── services/mentor.ts   LocalMentorService · HttpMentorService · HybridMentorService
+│   ├── services/mentor.ts   Local · Http · Hybrid · AutoMentorService, probeGemini
 │   ├── state/
 │   │   ├── store.tsx        the app state and its derivations
 │   │   ├── storage.ts       chrome.storage.local with a localStorage fallback
@@ -53,12 +53,12 @@ faro/
 │   ├── test/
 │   │   ├── fake-canvas.ts   a fake Canvas with real pagination
 │   │   ├── fake-gemini.ts   a fake Gemini (replies, errors, slowness)
-│   │   └── e2e.ts           36 checks
+│   │   └── e2e.ts           38 checks
 │   ├── .env.example
 │   └── package.json         "dependencies": {}
 ├── docs/                    the three books
 ├── .env.example             VITE_CANVAS_MODE, VITE_FARO_API_URL, VITE_MENTOR_MODE
-└── package.json             react, react-dom; vite, typescript
+└── package.json             react, react-dom; vite, typescript; `server` script
 ```
 
 ## 2.2 The three seams that matter

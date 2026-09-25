@@ -70,7 +70,9 @@ Este es el camino de producción. Está diseñado y documentado en el código; l
 
 **Cómo lo usa FARO:** el backend mantiene una lista de orígenes permitidos (`FARO_ALLOWED_ORIGINS`). Un origen fuera de la lista recibe `403` sin datos ni cabeceras CORS. Los métodos anunciados son `GET, POST, OPTIONS`: `POST` existe para `POST /api/mentor` (y para el lanzamiento LTI, que hoy responde 501). Hacia Canvas el backend sigue enviando solo `GET`.
 
-**[código]** `server/src/http.ts`, método `corsHeaders`. **[prueba]** "a browser origin outside the list gets 403 and no data", "CORS preflight succeeds for an allowed origin".
+**Excepción para desarrollo local:** cuando el backend escucha en *loopback* (`FARO_HOST` = `127.0.0.1`, `localhost` o `::1`, el valor por defecto), también acepta cualquier origen de extensión de Chrome con la forma `chrome-extension://<32 letras a–p>`, para que la extensión cargada sin empaquetar funcione sin copiar su id en `FARO_ALLOWED_ORIGINS`. Se apaga con `FARO_STRICT_ORIGINS=true`, y se apaga sola cuando el servidor escucha en otra interfaz (por ejemplo `0.0.0.0`). Al arrancar, el backend lo anuncia: *"Accepting the unpacked FARO extension (any chrome-extension:// origin, loopback only)"*. **En producción:** listar el id exacto de la extensión y fijar `FARO_STRICT_ORIGINS=true`.
+
+**[código]** `server/src/http.ts`, método `corsHeaders`; `server/src/env.ts` (`allowExtensionOrigins`). **[prueba]** "a browser origin outside the list gets 403 and no data", "CORS preflight succeeds for an allowed origin", "an extension origin is refused unless extension origins are enabled", "mentor: the unpacked extension can call it when extension origins are on (loopback dev)".
 
 ## 3.7 Límite de tasa — protección contra bucles
 

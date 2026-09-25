@@ -2,13 +2,17 @@
  * The whole icon set FARO uses, as inline SVG strokes. No icon font, no
  * dependency, and every glyph inherits `currentColor` so the same icon works
  * on the dark sidebar and on a white card.
+ *
+ * Two families share one grid (24 px, 1.8 stroke, round ends):
+ *  - FARO's own language (faroGlyphs.tsx: lighthouse, compass, ship, route,
+ *    harbor, storm, beacon…), for anything that is part of the voyage;
+ *  - plain utility glyphs below (arrow, check, close, clock…), for controls.
  */
 import type { ReactElement } from 'react'
+import { faroGlyphs, type FaroGlyph } from './faroGlyphs'
 
-export type IconName =
+type BaseIcon =
   | 'home'
-  | 'route'
-  | 'lighthouse'
   | 'chart'
   | 'chat'
   | 'arrow'
@@ -34,7 +38,22 @@ export type IconName =
   | 'spark'
   | 'calendar'
 
-const paths: Record<IconName, ReactElement> = {
+export type IconName = BaseIcon | FaroGlyph
+
+/**
+ * The one colour a FARO glyph may carry, by meaning (tokens.css):
+ * progress = green, momentum = orange, reward = violet, none = all ink.
+ * Glyphs that are about momentum or reward default to that tone.
+ */
+export type IconTone = 'progress' | 'momentum' | 'reward' | 'none'
+const defaultTone: Partial<Record<FaroGlyph, IconTone>> = {
+  rhythm: 'momentum',
+  beacon: 'reward',
+  reward: 'reward',
+  stateBeaconNotYet: 'reward',
+}
+
+const base: Record<BaseIcon, ReactElement> = {
   calendar: (
     <>
       <rect x="4" y="5.5" width="16" height="14.5" rx="2" />
@@ -46,21 +65,6 @@ const paths: Record<IconName, ReactElement> = {
       <path d="M3 10.5 12 3l9 7.5" />
       <path d="M5 9.5V20h14V9.5" />
       <path d="M10 20v-6h4v6" />
-    </>
-  ),
-  route: (
-    <>
-      <path d="M4 6.5 9 4v14l-5 2.5Z" />
-      <path d="M9 4l6 2.5V20L9 18" />
-      <path d="M15 6.5 20 4v14l-5 2.5" />
-    </>
-  ),
-  lighthouse: (
-    <>
-      <path d="M9.5 9h5l1.5 12h-8L9.5 9Z" />
-      <path d="M9 13.5h6" />
-      <rect x="9.5" y="5.5" width="5" height="3.5" rx="0.8" />
-      <path d="M12 3v2.5M4.5 7l3 .8M19.5 7l-3 .8" />
     </>
   ),
   chart: (
@@ -182,17 +186,24 @@ const paths: Record<IconName, ReactElement> = {
   spark: <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18" />,
 }
 
+const paths: Record<IconName, ReactElement> = { ...base, ...faroGlyphs }
+
 export function Icon({
   name,
   size = 20,
   stroke = 1.8,
+  tone,
   className,
 }: {
   name: IconName
   size?: number
   stroke?: number
+  /** Accent colour for FARO glyphs; ignored by utility glyphs. */
+  tone?: IconTone
   className?: string
 }) {
+  const t = tone ?? defaultTone[name as FaroGlyph] ?? 'progress'
+  const cls = [t === 'progress' ? null : `fi--${t}`, className].filter(Boolean).join(' ') || undefined
   return (
     <svg
       width={size}
@@ -204,7 +215,7 @@ export function Icon({
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className={className}
+      className={cls}
     >
       {paths[name]}
     </svg>

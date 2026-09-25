@@ -2,7 +2,7 @@
 
 ## 8.1 Lo que se verifica automáticamente
 
-`cd server && npm test` levanta un Canvas simulado con paginación real, un Gemini simulado (`server/test/fake-gemini.ts`) y el backend encima, y ejecuta estas 36 verificaciones:
+`cd server && npm test` levanta un Canvas simulado con paginación real, un Gemini simulado (`server/test/fake-gemini.ts`) y el backend encima, y ejecuta estas 38 verificaciones:
 
 ```text
 ok  health names the Canvas host and never the token
@@ -16,6 +16,7 @@ ok  a write is refused even on an allowed path
 ok  an unknown query parameter is refused
 ok  path traversal is refused
 ok  a browser origin outside the list gets 403 and no data
+ok  an extension origin is refused unless extension origins are enabled
 ok  CORS preflight succeeds for an allowed origin
 ok  responses carry no-store and nosniff
 ok  Canvas 404 is passed through as 404
@@ -25,6 +26,7 @@ ok  rate limit trips after the configured burst
 ok  Canvas 401 on analytics is passed through so the client can fall back
 ok  a wrong token is reported as rejected, not as a generic failure
 ok  .env parser handles comments, quotes and CRLF
+ok  mentor: the unpacked extension can call it when extension origins are on (loopback dev)
 ok  mentor: answers with Gemini and returns text + suggestions
 ok  mentor: the key goes in a header, never in the URL
 ok  mentor: extra fields in the context never reach Gemini
@@ -42,10 +44,10 @@ ok  mentor: without a key the route answers 503 so the extension falls back
 ok  mentor-only server: Canvas routes say canvas_not_configured
 ok  config: half a Canvas setup is refused, mentor-only is accepted
 
-36 checks passed
+38 checks passed
 ```
 
-Las 16 últimas cubren el mentor: que la respuesta de Gemini se convierte en `{ text, suggestions }`; que la clave va solo en la cabecera; que los campos extra del contexto nunca llegan a Gemini; que el modo Enséñame llega al prompt; que el historial se recorta a 8 turnos; que "haz mi tarea" se responde sin llamar al modelo; los `400`, `413` y `415`; que una respuesta en prosa se acepta; que una clave rechazada da `mentor_key_rejected` sin repetir el cuerpo de Google; el bloqueo de seguridad; el `504`; el `429` por cliente; que ni la clave ni la conversación aparecen en el log; el `503` sin clave; el `canvas_not_configured` y `/health` de un servidor solo mentor; y las reglas de configuración.
+Una de las primeras comprueba que un origen `chrome-extension://` se rechaza si el servidor no acepta orígenes de extensión. Las 17 últimas cubren el mentor: que la extensión sin empaquetar puede llamarlo cuando el servidor acepta orígenes de extensión (desarrollo en *loopback*); que la respuesta de Gemini se convierte en `{ text, suggestions }`; que la clave va solo en la cabecera; que los campos extra del contexto nunca llegan a Gemini; que el modo Enséñame llega al prompt; que el historial se recorta a 8 turnos; que "haz mi tarea" se responde sin llamar al modelo; los `400`, `413` y `415`; que una respuesta en prosa se acepta; que una clave rechazada da `mentor_key_rejected` sin repetir el cuerpo de Google; el bloqueo de seguridad; el `504`; el `429` por cliente; que ni la clave ni la conversación aparecen en el log; el `503` sin clave; el `canvas_not_configured` y `/health` de un servidor solo mentor; y las reglas de configuración (incluidos el valor por defecto en *loopback*, `FARO_STRICT_ORIGINS` y el caso `0.0.0.0`).
 
 No usa ningún framework de pruebas: `node:assert` y un `check(nombre, fn)` de diez líneas. El proceso termina con código distinto de cero al primer fallo, así que sirve como paso de CI.
 
@@ -66,7 +68,9 @@ Este script no está en el repositorio porque depende de compilar la extensión 
 
 El camino completo (extensión con `VITE_MENTOR_MODE=gemini` → `POST /api/mentor` → Gemini) se verificó en el navegador **contra el Gemini simulado**, incluido el respaldo: con el simulado caído, la extensión respondió con el mentor local y la nota *"Gemini no pudo responder en este momento, así que respondió el mentor local"*.
 
-**No se ha ejercitado contra la API real de Google** desde el entorno de desarrollo: la política de red lo bloqueó. El equipo lo valida con su propia clave (capítulo 6 y README). Los nombres de modelo cambian: verificar `GEMINI_MODEL` en `ai.google.dev/gemini-api/docs/models` antes de probar.
+Con el modo por omisión (`VITE_MENTOR_MODE=auto`) también se verificó en la vista previa del navegador: con el backend y el Gemini simulado en marcha, el pie dijo *"Responde Gemini…"* y llegó una respuesta de Gemini; con el backend detenido, el pie dijo *"Mentor local…"* y respondió el mentor local.
+
+**No se ha ejercitado contra la API real de Google** desde el entorno de desarrollo: la política de red lo bloqueó. El equipo lo valida con su propia clave (capítulo 6.9 y README). Los nombres de modelo cambian: verificar `GEMINI_MODEL` en `ai.google.dev/gemini-api/docs/models` antes de probar.
 
 ## 8.3 Verificación manual en la interfaz
 

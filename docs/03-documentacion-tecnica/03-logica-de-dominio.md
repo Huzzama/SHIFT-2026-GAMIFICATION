@@ -188,7 +188,7 @@ Una `StudySession` es lo que FARO anota cuando el estudiante marca un paso como 
 
 ## 3.9 `mentorContext.ts` — la frontera de privacidad
 
-Una función, `buildMentorContext`, que produce los once campos del `MentorContext`. Si un dato no se construye aquí, el mentor no lo recibe. No lee `Profile`. Es el único archivo que el Libro 1 cita como contrato de datos del mentor. En modo `gemini`, el backend vuelve a aplicar el mismo contrato (`sanitizeMentorRequest`, capítulo 5): la extensión no es la única barrera.
+Una función, `buildMentorContext`, que produce los once campos del `MentorContext`. Si un dato no se construye aquí, el mentor no lo recibe. No lee `Profile`. Es el único archivo que el Libro 1 cita como contrato de datos del mentor. Cuando responde Gemini, el backend vuelve a aplicar el mismo contrato (`sanitizeMentorRequest`, capítulo 5): la extensión no es la única barrera.
 
 ## 3.10 `timeSession.ts` — "¿cuánto tiempo tienes?"
 
@@ -238,7 +238,7 @@ option incorrecta → { wrong, question, remaining: opciones sin las ya probadas
 
 Con `next`, el Mentor hace la segunda pregunta, un poco distinta; con `null`, propone aplicarlo al siguiente paso. Con `wrong`, repite la idea clave (`explain`) y vuelve a preguntar sin la opción ya probada. No hay puntos en juego.
 
-Las lecciones existen solo para el curso del banco (`REVIEW_BANK_COURSE_ID`). En modo `gemini`, los temas abiertos van al backend con `mode: 'teach'` (TEACH MODE del prompt, capítulo 5).
+Las lecciones existen solo para el curso del banco (`REVIEW_BANK_COURSE_ID`). Cuando Gemini está disponible, los temas abiertos van al backend con `mode: 'teach'` (TEACH MODE del prompt, capítulo 5).
 
 ## 3.13 `rhythm.ts` — la semana de ritmo
 

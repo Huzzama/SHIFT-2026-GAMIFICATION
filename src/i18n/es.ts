@@ -66,6 +66,30 @@ export const es = {
       clear: 'Quitar plan',
       done: 'hecho',
     },
+    horizon: { eyebrow: 'Tu horizonte', empty: 'Define tu destino' },
+    trail: {
+      title: (i: number, n: number) => `Módulo ${i} de ${n}`,
+      finished: 'Ruta completa',
+      destination: 'Destino',
+    },
+    stats: {
+      momentum: 'Impulso',
+      route: 'Ruta',
+      rhythm: (n: number) => `ritmo: ${n}/7 días`,
+      modules: (d: number, n: number) => `${d} de ${n} módulos`,
+    },
+    says: {
+      fits: (m: number) => `Tienes ${m} minutos hoy. Hagamos lo único que te mueve hacia adelante.`,
+      longer: (n: number, m: number) => `Tu siguiente paso toma unos ${n} minutos. Con tus ${m} puedes empezarlo y pausar sin perder nada.`,
+      returning: (m: number) => `Solo necesitas ${m} minutos para que tu ruta vuelva a moverse.`,
+      done: 'Llegaste al destino. Lo que construiste aquí sigue contando.',
+    },
+    support: {
+      sos: 'SOS',
+      sosSub: 'Estoy atorado',
+      room: 'Sala de estudio',
+      roomSub: (n: number) => `${n} estudiando ahora`,
+    },
     achievementsCard: { label: 'Tienes', earned: (n: number) => `${n} ${n === 1 ? 'logro' : 'logros'}`, sub: 'de resiliencia' },
     mentorCard: { label: 'FARO Mentor', title: 'Pregúntale a FARO', sub: 'Guía, no respuestas hechas' },
     welcomeBack: { title: 'Bienvenido de vuelta.', body: 'Tu progreso sigue aquí. Busquemos una forma de volver que se ajuste a tu semana — sin ponerte al corriente.', cta: 'Recalcular mi ruta' },
@@ -75,6 +99,7 @@ export const es = {
       meta: (min: number, have: number) => `Unos ${min} minutos · nos dijiste que tienes ${have}.`,
       start: 'Empezar este paso',
       ask: 'Preguntar a FARO',
+      minutes: (m: number) => `${m} min`,
       empty: 'No hay nada esperándote ahora. Llegaste al final de la ruta.',
     },
     visit: {
@@ -114,6 +139,17 @@ export const es = {
       shortest: 'Es el paso más corto disponible: empiézalo y pausa cuando lo necesites.',
     },
     reconnect: 'Reconectar:',
+    map: {
+      eyebrow: 'Tu travesía',
+      start: 'Inicio',
+      destination: 'Destino',
+      here: 'Estás aquí',
+      harbor: 'Puerto seguro',
+      recalculating: 'Recalculando tu ruta…',
+      recalculated: 'Ruta recalculada',
+      module: (n: number, name: string) => `M${n} · ${name}`,
+      legend: 'La ruta puede cambiar. El destino no.',
+    },
   },
 
   /* ----------------------------------------------------------- mentor */
@@ -273,6 +309,18 @@ export const es = {
       body: 'Por ayudar a compañeros, no por ser popular. Se ganan igual que las de resiliencia: con lo que realmente hiciste.',
       viewProfile: 'Ver tu perfil',
     },
+    demo: {
+      eyebrow: 'Demostración',
+      body: 'Para presentar FARO o probarlo desde cero. Nada de esto toca Canvas.',
+      scenario: 'Probar el escenario de regreso',
+      scenarioHint: '5 días sin entrar · quedan 12 días · 4.5 h y 4 módulos por terminar el bloque. Se abre Recuperación.',
+      scenarioOn: 'Escenario de demostración cargado: el curso viene de datos de ejemplo, no de tu Canvas.',
+      reset: 'Reiniciar todo',
+      resetHint: 'Borra tu destino, tus sesiones, puntos y preferencias, y vuelve a empezar desde la bienvenida.',
+      confirm: '¿Seguro? Esto no se puede deshacer.',
+      confirmYes: 'Sí, reiniciar',
+      cancel: 'Cancelar',
+    },
     week: {
       eyebrow: 'Tu ritmo',
       count: (n: number) => `${n} ${n === 1 ? 'día activo' : 'días activos'} esta semana`,
@@ -312,6 +360,17 @@ export const es = {
     plan: {
       analyzing: 'Revisando tu progreso…',
       recalculating: 'Recalculando tu ruta…',
+      recalcCard: {
+        title: 'Recalculando tu ruta…',
+        done: 'Tu ruta nueva está lista',
+        meta: (d: number, m: number, min: number) => `${d} ${d === 1 ? 'día' : 'días'} · ${m} ${m === 1 ? 'módulo' : 'módulos'} · ${min} min al día`,
+        keep: 'El destino no cambió. Solo cambió el camino.',
+      },
+      resilience: {
+        eyebrow: 'Resiliencia',
+        of: (a: number, b: number) => `${a} de ${b}`,
+        body: 'Se ganan volviendo y siguiendo, no siendo perfecto.',
+      },
       welcome: {
         title: 'Bienvenido de vuelta',
         sub: 'Tu progreso sigue aquí. FARO recalculó tu ruta.',
@@ -676,10 +735,10 @@ export const es = {
   /* ------------------------------------------------------ review cards */
   review: {
     offer: {
-      eyebrow: 'Reconecta en 2 minutos',
-      title: 'Tres preguntas de lo último que viste',
+      eyebrow: 'Misión de regreso',
+      title: 'Reconecta en 3 minutos',
       body: (module: string) =>
-        `Sobre ${module}. No es un examen y no cuenta para tu calificación: es para que compruebes que no olvidaste todo.`,
+        `Tres tarjetas rápidas sobre lo que ya sabes de ${module}. No es un examen y no cuenta para tu calificación.`,
       points: (n: number) => `+${n} puntos al terminar`,
       start: 'Empezar',
       skip: 'Ahora no',

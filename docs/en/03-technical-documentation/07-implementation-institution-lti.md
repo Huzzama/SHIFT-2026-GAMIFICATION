@@ -89,4 +89,4 @@ With this, `CANVAS_ACCESS_TOKEN` disappears from `.env`: the backend goes from o
 
 ## 7.6 The extension in this scenario
 
-It keeps existing as an option: whoever prefers the side panel over the Canvas iframe installs it, and the extension calls the same backend with the same session (the cookie travels if `FARO_ALLOWED_ORIGINS` includes the extension id and the cookie is `SameSite=None`). The extension code does not change; only where `VITE_FARO_API_URL` points changes.
+It keeps existing as an option: whoever prefers the side panel over the Canvas iframe installs it, and the extension calls the same backend with the same session (the cookie travels if `FARO_ALLOWED_ORIGINS` includes the exact extension id, with `FARO_STRICT_ORIGINS=true`, and the cookie is `SameSite=None`). The extension code does not change; only where `VITE_FARO_API_URL` points changes.

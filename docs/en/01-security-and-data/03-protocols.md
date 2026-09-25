@@ -70,7 +70,9 @@ This is the production path. It is designed and documented in the code; the rout
 
 **How FARO uses it:** the backend keeps a list of allowed origins (`FARO_ALLOWED_ORIGINS`). An origin outside the list receives `403` with no data and no CORS headers. The advertised methods are `GET, POST, OPTIONS`: `POST` exists for `POST /api/mentor` (and for the LTI launch, which answers 501 today). Towards Canvas the backend still sends only `GET`.
 
-**[code]** `server/src/http.ts`, `corsHeaders`. **[test]** "a browser origin outside the list gets 403 and no data", "CORS preflight succeeds for an allowed origin".
+**Exception for local development:** when the backend listens on loopback (`FARO_HOST` = `127.0.0.1`, `localhost` or `::1`, the default), it also accepts any Chrome extension origin of the form `chrome-extension://<32 letters a–p>`, so the unpacked extension works without copying its id into `FARO_ALLOWED_ORIGINS`. It is turned off with `FARO_STRICT_ORIGINS=true`, and turns itself off when the server listens on another interface (e.g. `0.0.0.0`). At start-up the backend says so: *"Accepting the unpacked FARO extension (any chrome-extension:// origin, loopback only)"*. **In production:** list the exact extension id and set `FARO_STRICT_ORIGINS=true`.
+
+**[code]** `server/src/http.ts`, `corsHeaders`; `server/src/env.ts` (`allowExtensionOrigins`). **[test]** "a browser origin outside the list gets 403 and no data", "CORS preflight succeeds for an allowed origin", "an extension origin is refused unless extension origins are enabled", "mentor: the unpacked extension can call it when extension origins are on (loopback dev)".
 
 ## 3.7 Rate limit — protection against loops
 

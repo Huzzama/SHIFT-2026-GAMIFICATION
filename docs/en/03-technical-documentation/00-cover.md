@@ -40,10 +40,11 @@ Chapters 1 to 5 describe the code. Chapters 6 and 7 are step-by-step procedures.
 |---|---|---|
 | root | `npm install` | Installs the extension's dependencies (68 packages) |
 | root | `npm run dev` | Vite dev server at `http://localhost:5173` |
+| root | `npm run server` | The backend with auto-reload, from the root (= `npm --prefix server run dev`) |
 | root | `npm run typecheck` | Checks types; if it prints nothing after the header, it passed |
 | root | `npm run build` | Builds the extension into `dist/` |
 | `server/` | `cp .env.example .env` | Creates the backend configuration (then edit it) |
 | `server/` | `npm run dev` | Backend with auto-reload |
 | `server/` | `npm start` | Backend |
-| `server/` | `npm test` | 36 checks against a fake Canvas and a fake Gemini |
+| `server/` | `npm test` | 38 checks against a fake Canvas and a fake Gemini |
 | `server/` | `npm install` | Only if you want `npm run typecheck` there (installs `typescript` and `@types/node`; the backend itself has no dependencies) |

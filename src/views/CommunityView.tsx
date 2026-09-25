@@ -173,7 +173,7 @@ export function CommunityView({
       ) : (
         <button className="cm-sosbtn" onClick={() => setSosOpen(true)}>
           <span className="cm-sosbtn__mark" aria-hidden="true">
-            <Icon name="wave" size={18} />
+            <Icon name="lifeBuoy" size={18} tone="none" />
           </span>
           {c.sos.button}
           <Icon name="arrow" size={16} />
@@ -223,7 +223,7 @@ export function CommunityView({
       <section>
         <div className="section">
           <div className="section__title">
-            <Icon name="user" size={22} /> {c.rooms.eyebrow}
+            <Icon name="fleet" size={22} /> {c.rooms.eyebrow}
           </div>
           <button className="section__link" onClick={() => setCreating(!creating)}>
             {c.rooms.create} <Icon name="arrow" size={16} />

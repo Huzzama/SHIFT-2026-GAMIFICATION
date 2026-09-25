@@ -8,18 +8,19 @@ Tick every item before connecting FARO to a Canvas with real students. Items mar
 - [ ] ⚙ The token belongs to a pilot **student account**, not an instructor or administrator.
 - [ ] ⚙ The token has an **expiry date** (recommended: 30 days).
 - [ ] ⚙ `FARO_HOST=127.0.0.1` unless TLS sits in front.
-- [ ] ⚙ `FARO_ALLOWED_ORIGINS` contains only the real origins (the loaded extension's id, the dev server if applicable).
+- [ ] ⚙ `FARO_ALLOWED_ORIGINS` contains only the real origins (the loaded extension's exact id, the dev server if applicable).
+- [ ] ⚙ `FARO_STRICT_ORIGINS=true` in any deployment that is not a developer's machine: the backend then stops accepting any `chrome-extension://` origin (chapter 3.6).
 - [ ] ⚙ If the Gemini mentor will be used: `GEMINI_API_KEY` belongs to a Google Cloud project **with active billing** (Paid Services), **never** the free tier (chapter 7.8).
 - [ ] ⚙ `GEMINI_MODEL` has been checked against `ai.google.dev/gemini-api/docs/models` (default `gemini-3.5-flash`; model names change).
 - [ ] ⚙ `FARO_MENTOR_PER_MINUTE` has an agreed value (default 20 model calls per client per minute).
-- [ ] ⚙ `npm test` in `server/` passes all 36 checks.
+- [ ] ⚙ `npm test` in `server/` passes all 38 checks.
 - [ ] ⚙ `curl http://127.0.0.1:3000/health` answers with the Canvas host and `mentor: {provider, model}` (or `null` without a key), and does **not** contain the token or the key.
 - [ ] ⚙ The Gemini mentor has been tried against the real API with the pilot key: a reply arrives with the violet ring and **without** the note "Gemini could not answer…". (In development it was only verified against a fake Gemini.)
 
 ## B. Before loading the extension
 
 - [ ] ⚙ It was built with `VITE_CANVAS_MODE=http` and `VITE_FARO_API_URL` pointing at the backend.
-- [ ] ⚙ `VITE_MENTOR_MODE` is `gemini` only if the institution approved the AI mentor; otherwise `local`. The FARO Mentor footer says the right thing (*"Answers by Gemini, through FARO's server…"* or *"Local mentor: no AI model…"*).
+- [ ] ⚙ `VITE_MENTOR_MODE=local` unless the institution approved the AI mentor; in that case `auto` (the default) or `gemini`, with an approved paid key on the server. The FARO Mentor footer says the right thing (*"Answers by Gemini, through FARO's server…"* or *"Local mentor: no AI model…"*).
 - [ ] ⚙ Neither the root `.env` nor `.env.local` contains a Gemini key.
 - [ ] ⚙ `public/manifest.json` does **not** contain `instructure.com` in `host_permissions`.
 - [ ] ⚙ In *Profile → Canvas* the badge says *Live* and the log shows status `200` on all four paths.

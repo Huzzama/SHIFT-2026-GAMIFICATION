@@ -12,7 +12,7 @@ These are not design preferences. They are limits written in the code, and any n
 
 **5. FARO does not do your graded work.** The Mentor explains, gives hints, organises and accompanies. If you ask it to solve an exam or write your submission, it refuses and offers help so you can do it yourself.
 
-**6. The Mentor sees only eleven fields.** Course, progress, next activity, estimated time, your declared goal, your destination in your words, available time, momentum, friction state, style and language. If your institution turned on Gemini, also your message and the last 8 turns of the conversation, through FARO's server. It does not see your name, your email, your grades, your photo or your full history. The screen always says who is answering.
+**6. The Mentor sees only eleven fields.** Course, progress, next activity, estimated time, your declared goal, your destination in your words, available time, momentum, friction state, style and language. If Gemini answers, also your message and the last 8 turns of the conversation, through FARO's server. It does not see your name, your email, your grades, your photo or your full history. The screen always says who is answering.
 
 **7. FARO does not write to Canvas.** The permission to submit grades exists in the LTI standard and we explicitly refuse it. Canvas is the academic source of truth; FARO only reads.
 

@@ -9,6 +9,7 @@
  * Violet is the reward colour from the brand sheet — it appears here and
  * nowhere else, so an earned achievement is recognisable at a glance.
  */
+import { useState } from 'react'
 import { Icon } from '@/components/Icon'
 import { communityRecognitionState, evaluateCommunityAchievements } from '@/lib/community'
 import { activeDays } from '@/lib/rhythm'
@@ -30,7 +31,7 @@ function Badge({ a }: { a: Achievement | CommunityAchievement }) {
   return (
     <li className={`badge${a.earned ? ' badge--earned' : ''}`}>
       <span className="badge__mark" aria-hidden="true">
-        <Icon name={a.earned ? 'trophy' : 'flag'} size={18} />
+        <Icon name={a.earned ? 'beacon' : 'stateBeaconNotYet'} size={20} tone="none" />
       </span>
       <div>
         <div className="badge__title">{a.title}</div>
@@ -44,13 +45,20 @@ export function ProgressView({
   onOpenJourney,
   onEditPurpose,
   onOpenProfile,
+  onStartScenario,
+  onReset,
 }: {
   onOpenJourney: () => void
   onEditPurpose: () => void
   onOpenProfile: () => void
+  /** Loads the demo return and sends the student to Recovery. */
+  onStartScenario: () => void
+  /** Wipes FARO and goes back to onboarding. */
+  onReset: () => void
 }) {
-  const { t, journey, friction, sessions, achievements, snapshot, purpose, awayGap, week } = useStore()
+  const { t, journey, friction, sessions, achievements, snapshot, purpose, awayGap, week, scenario } = useStore()
   const community = useCommunity()
+  const [confirming, setConfirming] = useState(false)
 
   const recognitions = evaluateCommunityAchievements(
     communityRecognitionState(community, awayGap),
@@ -217,6 +225,35 @@ export function ProgressView({
       <button className="btn btn--ghost btn--block" onClick={onOpenJourney}>
         {t.progress.fullRoute}
       </button>
+
+      {/* Demo tools: last on purpose, out of the student's way. */}
+      <section className="card demo">
+        <div className="eyebrow">{t.progress.demo.eyebrow}</div>
+        <p className="muted demo__body">{t.progress.demo.body}</p>
+        {scenario && <p className="demo__on">{t.progress.demo.scenarioOn}</p>}
+        <button className="btn btn--block" onClick={onStartScenario}>
+          <Icon name="safeHarbor" size={18} tone="none" /> {t.progress.demo.scenario}
+        </button>
+        <p className="demo__hint">{t.progress.demo.scenarioHint}</p>
+        {confirming ? (
+          <div className="demo__confirm" role="alert">
+            <span>{t.progress.demo.confirm}</span>
+            <div className="row">
+              <button className="btn btn--danger" onClick={onReset}>
+                {t.progress.demo.confirmYes}
+              </button>
+              <button className="btn btn--ghost" onClick={() => setConfirming(false)}>
+                {t.progress.demo.cancel}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button className="btn btn--ghost btn--block" onClick={() => setConfirming(true)}>
+            <Icon name="refresh" size={18} /> {t.progress.demo.reset}
+          </button>
+        )}
+        <p className="demo__hint">{t.progress.demo.resetHint}</p>
+      </section>
     </div>
   )
 }

@@ -20,6 +20,7 @@ Con solo `GEMINI_API_KEY`, arranca en modo **solo mentor**: `/api/launch` y `/ca
 | `FARO_HOST` | `127.0.0.1` | Interfaz de escucha |
 | `FARO_PORT` | `3000` | Puerto |
 | `FARO_ALLOWED_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Orígenes de navegador permitidos, separados por coma |
+| `FARO_STRICT_ORIGINS` | vacío (`false`) | `true` = aceptar solo `FARO_ALLOWED_ORIGINS`, también en *loopback* (ver 5.4) |
 | `FARO_RATE_LIMIT_PER_MINUTE` | `120` | Peticiones por minuto por cliente |
 | `FARO_CANVAS_TIMEOUT_MS` | `10000` | Tiempo máximo de una llamada a Canvas |
 | `FARO_LOG_LEVEL` | `info` | `info` o `debug` |
@@ -59,7 +60,7 @@ Este archivo **debe coincidir** con `src/data/canvas/endpoints.ts` de la extensi
 `HttpApp` sobre `node:http`:
 
 - **Router** por método y expresión regular. Ruta desconocida → `404`; ruta conocida con método incorrecto → `405`.
-- **CORS**: si hay `Origin` y no está en la lista → `403 origin_not_allowed`, sin cabeceras CORS. Preflight `OPTIONS` → `204` con `GET, POST, OPTIONS`.
+- **CORS**: si hay `Origin` y no está en la lista → `403 origin_not_allowed`, sin cabeceras CORS. Preflight `OPTIONS` → `204` con `GET, POST, OPTIONS`. Cuando el servidor escucha en *loopback* (`FARO_HOST` = `127.0.0.1`, `localhost` o `::1`, el valor por defecto), también acepta cualquier origen `chrome-extension://<32 letras a–p>` (`allowExtensionOrigins`), para que la extensión cargada sin empaquetar funcione sin copiar su id. Se apaga con `FARO_STRICT_ORIGINS=true`, y solo cuando el servidor escucha en otra interfaz (p. ej. `0.0.0.0`). En producción: el id exacto en `FARO_ALLOWED_ORIGINS` y `FARO_STRICT_ORIGINS=true`.
 - **Cuerpo de un POST**: solo `application/json` (si no, `415 json_required`), como máximo 32 KB (`MAX_BODY_BYTES`; si no, `413 body_too_large`), JSON válido (si no, `400 invalid_json`). El cuerpo nunca se registra ni se repite en un error.
 - **Rate limit**: ventana fija por dirección remota; al exceder → `429` con `Retry-After: 60`. Un barrido cada minuto descarta ventanas viejas.
 - **Cabeceras** en toda respuesta: `Content-Type: application/json; charset=utf-8`, `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-FARO-Request: <id>`.
@@ -114,11 +115,12 @@ Más los de la capa HTTP: `413 body_too_large`, `415 json_required`.
 
 ```text
 [faro-server] listening on http://127.0.0.1:3000
+[faro-server] Accepting the unpacked FARO extension (any chrome-extension:// origin, loopback only)
 [faro-server] Canvas: canvas.instructure.com (read-only, token in memory only)
 [faro-server] Mentor: Gemini gemini-3.5-flash (key in memory only)
 ```
 
-Si falta una de las dos piezas, su línea dice `not configured`. Con una configuración inválida:
+La segunda línea aparece solo cuando se aceptan orígenes de extensión (*loopback* sin `FARO_STRICT_ORIGINS=true`). Si falta Canvas o el mentor, su línea dice `not configured`. Con una configuración inválida:
 
 ```text
 [faro-server] Nothing to serve: set CANVAS_API_URL + CANVAS_ACCESS_TOKEN, GEMINI_API_KEY, or both
@@ -133,7 +135,7 @@ Si falta una de las dos piezas, su línea dice `not configured`. Con una configu
 
 `fake-gemini.ts` es un Gemini de mentira: exige la clave en la cabecera como Google, guarda cada cuerpo y URL recibidos para comprobar qué habría salido hacia Google, y responde lo que la prueba elija (JSON, prosa, bloqueo de seguridad, un estado HTTP o una demora).
 
-`e2e.ts` levanta el backend sobre esos simulados y ejecuta 36 verificaciones: las 20 de Canvas, CORS, logs y `.env`, y 16 del mentor, del modo solo mentor y de las reglas de configuración. Se corre con `npm test` y termina con código distinto de cero al primer fallo. Lo que verifica es, literalmente, lo que el Libro 1 afirma.
+`e2e.ts` levanta el backend sobre esos simulados y ejecuta 38 verificaciones: 21 de Canvas, CORS (incluido que un origen de extensión se rechaza si no están habilitados), logs y `.env`, y 17 del mentor (incluida la llamada desde la extensión sin empaquetar en *loopback*), del modo solo mentor y de las reglas de configuración (*loopback* por defecto, `FARO_STRICT_ORIGINS` y el caso `0.0.0.0`). Se corre con `npm test` y termina con código distinto de cero al primer fallo. Lo que verifica es, literalmente, lo que el Libro 1 afirma.
 
 ## 5.9 Añadir una ruta de Canvas (procedimiento)
 

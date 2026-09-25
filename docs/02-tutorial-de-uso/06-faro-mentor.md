@@ -4,10 +4,10 @@ La pestaña **FARO**. Un chat, pero no un chatbot genérico: solo sabe de tu cur
 
 ### Quién te responde
 
-Al pie de la pantalla siempre dice cuál de los dos mentores te está respondiendo:
+Al pie de la pantalla siempre dice cuál de los dos mentores te está respondiendo. FARO lo comprueba cada vez que abres el Mentor: pregunta al servidor de FARO si tiene Gemini configurado (sin enviar nada sobre ti).
 
-- **Mentor local** — *"Mentor local: sin modelo de IA, nada sale de tu dispositivo."* Es la opción por omisión. Responde en tu navegador, con reglas fijas.
-- **Gemini** — *"Responde Gemini, a través del servidor de FARO. Ve tu progreso en el curso y tu meta — nunca quién eres."* Solo si tu institución lo activó. Los mensajes que escribe Gemini llevan un **anillo violeta** en el avatar de FARO.
+- **Mentor local** — *"Mentor local: sin modelo de IA, nada sale de tu dispositivo."* Responde en tu navegador, con reglas fijas. Es el que responde si el servidor de FARO no está disponible o no tiene Gemini, o si tu institución lo dejó así.
+- **Gemini** — *"Responde Gemini, a través del servidor de FARO. Ve tu progreso en el curso y tu meta — nunca quién eres."* Solo si el servidor de FARO tiene Gemini configurado. Los mensajes que escribe Gemini llevan un **anillo violeta** en el avatar de FARO.
 
 Si Gemini no puede responder en ese momento, responde el mentor local y lo dice al final del mensaje: *"Gemini no pudo responder en este momento, así que respondió el mentor local."* Nunca te quedas sin respuesta.
 

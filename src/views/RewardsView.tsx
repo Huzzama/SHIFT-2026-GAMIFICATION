@@ -96,7 +96,7 @@ export function RewardsView({ onOpenJourney }: { onOpenJourney: () => void }) {
       ) : goalReached ? (
         <section className="rw-next rw-next--unlocked">
           <div className="rw-next__burst" aria-hidden="true">
-            <Icon name="gift" size={30} />
+            <Icon name="reward" size={30} />
           </div>
           <div className="rw-next__eyebrow">{r.next.reachedEyebrow}</div>
           <div className="rw-next__reward">{r.next.reachedTitle}</div>

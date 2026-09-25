@@ -18,7 +18,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { faroClient, type CourseSnapshot } from '@/data/client'
+import { faroClient, scenarioClient, type CourseSnapshot } from '@/data/client'
 import { detectLang, dict, type Dict } from '@/i18n'
 import { evaluateAchievements } from '@/lib/achievements'
 import {
@@ -121,7 +121,16 @@ interface StoreValue {
   setLifeState: (s: LifeState | null) => void
   setPaused: (p: boolean) => void
   completeMilestone: (m: JourneyMilestone, minutes?: number) => void
+  /** Wipes everything FARO stored; the app starts again at onboarding. */
   reset: () => void
+  /** True while the demo scenario is loaded instead of the configured course. */
+  scenario: boolean
+  /**
+   * Replays the demo return: five days away, twelve days and 4.5 h left,
+   * four modules open. Keeps the purpose and preferences, clears what the
+   * student did in FARO, and reloads the course from fixtures.
+   */
+  startScenario: () => Promise<void>
 }
 
 const StoreContext = createContext<StoreValue | null>(null)
@@ -143,11 +152,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [reviews, setReviews] = useState<ReviewRecord[]>([])
   const [redemption, setRedemption] = useState<Redemption | null>(null)
   const [weekPlan, setWeekPlanState] = useState<WeekPlan | null>(null)
+  const [scenario, setScenario] = useState(false)
 
   useEffect(() => {
     let alive = true
     ;(async () => {
-      const [p, s, m, done, pz, l, pr, rv, rd, wp] = await Promise.all([
+      const [p, s, m, done, pz, l, pr, rv, rd, wp, sc] = await Promise.all([
         readValue<Purpose>('purpose'),
         readValue<MentorStyle>('mentorStyle'),
         readValue<number>('availableMinutes'),
@@ -158,6 +168,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         readValue<ReviewRecord[]>('reviews'),
         readValue<Redemption>('redemption'),
         readValue<WeekPlan>('weekPlan'),
+        readValue<boolean>('scenario'),
       ])
       if (!alive) return
       if (l === 'es' || l === 'en') setLangState(l)
@@ -170,9 +181,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (Array.isArray(rv)) setReviews(rv)
       if (rd) setRedemption(rd)
       if (wp && Array.isArray(wp.days)) setWeekPlanState(wp)
+      setScenario(sc === true)
 
       try {
-        const snap = await faroClient.getCourseSnapshot()
+        const snap = await (sc === true ? scenarioClient : faroClient).getCourseSnapshot()
         if (!alive) return
         setSnapshot(snap)
         setLoadError(null)
@@ -245,6 +257,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setReviews([])
     setRedemption(null)
     setWeekPlanState(null)
+    setAvailableMinutesState(20)
+    // Back to the configured course, if the demo scenario was loaded.
+    if (scenario) {
+      setScenario(false)
+      setLoading(true)
+      setReloadTick((n) => n + 1)
+    }
+  }, [scenario])
+
+  const startScenario = useCallback(async () => {
+    setSessions([])
+    setReviews([])
+    setRedemption(null)
+    setWeekPlanState(null)
+    setMessages([])
+    setLifeStateInner(null)
+    setPausedState(false)
+    // Written before the reload reads them back, so nothing old reappears.
+    await Promise.all([
+      writeValue('sessions', []),
+      writeValue('reviews', []),
+      writeValue('redemption', null),
+      writeValue('weekPlan', null),
+      writeValue('paused', false),
+      writeValue('scenario', true),
+    ])
+    setScenario(true)
+    setLoading(true)
+    setReloadTick((n) => n + 1)
   }, [])
 
   /**
@@ -446,6 +487,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setPaused,
     completeMilestone,
     reset,
+    scenario,
+    startScenario,
   }
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>

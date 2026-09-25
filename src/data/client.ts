@@ -18,7 +18,7 @@ import type {
   CanvasModule,
   StudyProfile,
 } from '@/types'
-import { createCanvasClient } from './canvas/client'
+import { createCanvasClient, createScenarioClient } from './canvas/client'
 
 export interface CourseSnapshot {
   course: CanvasCourse
@@ -45,3 +45,6 @@ export interface FaroClient {
  * it runs the same one against a different transport.
  */
 export const faroClient: FaroClient = createCanvasClient()
+
+/** The demo scenario (Progress → "Try the scenario"), always from fixtures. */
+export const scenarioClient: FaroClient = createScenarioClient()

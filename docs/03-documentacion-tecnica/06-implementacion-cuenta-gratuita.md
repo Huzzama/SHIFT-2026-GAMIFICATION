@@ -50,13 +50,14 @@ FARO_COURSE_ID=1234567
 Arranca:
 
 ```bash
-npm start
+npm start          # o, desde la raíz del proyecto: npm run server
 ```
 
 Debes ver:
 
 ```text
 [faro-server] listening on http://127.0.0.1:3000
+[faro-server] Accepting the unpacked FARO extension (any chrome-extension:// origin, loopback only)
 [faro-server] Canvas: canvas.instructure.com (read-only, token in memory only)
 [faro-server] Mentor: not configured (the extension uses its local mentor)
 ```
@@ -95,13 +96,18 @@ Opción B, extensión cargada en Chrome:
 npm run build
 ```
 
-Chrome → `chrome://extensions` → *Modo desarrollador* → *Cargar descomprimida* → carpeta `dist/`. Anota el **id de la extensión** que Chrome le asigna y añádelo a `server/.env`:
+Chrome → `chrome://extensions` → *Modo desarrollador* → *Cargar descomprimida* → carpeta `dist/`.
+
+En desarrollo local no hace falta copiar el id de la extensión: mientras el backend escucha en *loopback* (`FARO_HOST=127.0.0.1`, el valor por defecto), acepta cualquier origen `chrome-extension://`, y al arrancar lo anuncia con *"Accepting the unpacked FARO extension (any chrome-extension:// origin, loopback only)"*. **Opcional** (y obligatorio fuera de la máquina de desarrollo): anota el **id de la extensión** que Chrome le asigna, añádelo a `server/.env` y activa el modo estricto:
 
 ```text
 FARO_ALLOWED_ORIGINS=http://localhost:5173,chrome-extension://<id>
+FARO_STRICT_ORIGINS=true
 ```
 
 Reinicia el backend.
+
+**Dos terminales desde la raíz:** `npm run server` arranca el backend (= `npm --prefix server run dev`, con recarga automática) y, en la otra, `npm run dev` (navegador) o `npm run build` y cargar `dist/` sin empaquetar (extensión).
 
 ## 6.6 Verificar — 2 minutos
 
@@ -126,12 +132,12 @@ Si en el registro la ruta `/analytics/.../activity` aparece con `401` y el panel
 | `canvas_token_rejected` | Token mal copiado, expirado o revocado | Genera uno nuevo |
 | `no_active_course` | El estudiante no aceptó la invitación o el curso no está publicado | Acepta la invitación / publica el curso |
 | Inicio muestra 0 % con actividades | Las actividades no están en ningún módulo, o el token es del docente | Añade las actividades a módulos; usa token de estudiante |
-| FARO no carga y la consola dice `CORS` | El origen de la extensión no está en `FARO_ALLOWED_ORIGINS` | Añade `chrome-extension://<id>` y reinicia |
+| FARO no carga y la consola dice `CORS` | El origen no está en `FARO_ALLOWED_ORIGINS` y no se aceptan orígenes de extensión: `FARO_STRICT_ORIGINS=true`, o el backend escucha fuera de *loopback* (p. ej. `0.0.0.0`) | Añade `chrome-extension://<id>` a `FARO_ALLOWED_ORIGINS` y reinicia |
 | `ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX` | Node anterior a 22.18 | Actualiza Node |
 | Módulos aparecen sin estado (`unlocked` todos) | Token de docente | Usa token de estudiante |
 | `Nothing to serve: …` al arrancar | `server/.env` sin Canvas ni `GEMINI_API_KEY` | Configura al menos uno |
-| Cada respuesta del Mentor trae la nota "Gemini no pudo responder…" | Backend apagado, sin clave (`503`), clave rechazada (`502 mentor_key_rejected`) o nombre de modelo inexistente (`502 mentor_upstream`) | Revisa `/health` (`mentor` no debe ser `null`), la clave y `GEMINI_MODEL` |
-| El pie del Mentor dice "Mentor local" aunque configuraste Gemini | La extensión se construyó sin `VITE_MENTOR_MODE=gemini` | Añádelo a `.env.local` y reinicia `npm run dev` (o reconstruye) |
+| Cada respuesta del Mentor trae la nota "Gemini no pudo responder…" | Clave rechazada (`502 mentor_key_rejected`), nombre de modelo inexistente (`502 mentor_upstream`) o, con `VITE_MENTOR_MODE=gemini`, backend apagado o sin clave (`503`) | Revisa `/health` (`mentor` no debe ser `null`), la clave y `GEMINI_MODEL` |
+| El pie del Mentor dice "Mentor local" aunque configuraste Gemini | El servidor no está en marcha, no tiene `GEMINI_API_KEY`, o la extensión se construyó con `VITE_MENTOR_MODE=local` | Arranca el servidor con la clave (`/health` debe mostrar `mentor`), quita `VITE_MENTOR_MODE=local` y vuelve a abrir el Mentor |
 
 ## 6.9 Activar el mentor con Gemini (opcional) — 3 minutos
 
@@ -147,15 +153,9 @@ GEMINI_MODEL=gemini-3.5-flash
 
    Los nombres de modelo cambian: verifica el vigente en `ai.google.dev/gemini-api/docs/models`.
 
-3. Arranca el backend (`npm run dev` o `npm start` dentro de `server/`). La línea del mentor debe decir `Mentor: Gemini <modelo> (key in memory only)`. Canvas es opcional: con solo la clave, el backend arranca como mentor y las rutas de Canvas responden `503 canvas_not_configured`.
-4. En la raíz, añade a `.env.local`:
-
-```text
-VITE_MENTOR_MODE=gemini
-VITE_FARO_API_URL=http://127.0.0.1:3000
-```
-
-5. Reinicia `npm run dev` (Vite lee las variables al arrancar).
-6. Verifica: el pie del Mentor dice *"Responde Gemini, a través del servidor de FARO…"*, y al escribir un mensaje abierto la respuesta llega con el anillo violeta en el avatar y **sin** la nota *"Gemini no pudo responder…"*. Apaga el backend y vuelve a escribir: debe responder el mentor local, con la nota.
+3. Arranca el backend (`npm run server` desde la raíz, o `npm run dev` / `npm start` dentro de `server/`). La línea del mentor debe decir `Mentor: Gemini <modelo> (key in memory only)`. Canvas es opcional: con solo la clave, el backend arranca como mentor y las rutas de Canvas responden `503 canvas_not_configured`.
+4. Abre FARO (`npm run dev` o la extensión cargada). No hace falta reconstruir ni crear `.env.local`: con el modo por omisión (`VITE_MENTOR_MODE=auto`), cada vez que se abre el Mentor la extensión pregunta `GET /health` al backend en `VITE_FARO_API_URL` (por defecto `http://127.0.0.1:3000`) y, si el servidor informa un mentor, usa Gemini. `VITE_MENTOR_MODE=gemini` fuerza el intento siempre; `local` lo impide.
+5. Verifica: el pie del Mentor dice *"Responde Gemini, a través del servidor de FARO…"*, y al escribir un mensaje abierto la respuesta llega con el anillo violeta en el avatar y **sin** la nota *"Gemini no pudo responder…"*.
+6. Detén el backend y vuelve a abrir el Mentor: el pie debe decir *"Mentor local…"* y debe responder el mentor local.
 
 Este es el paso que el equipo debe hacer con su propia clave: en desarrollo, el camino solo se verificó contra un Gemini simulado (capítulo 8.2b).

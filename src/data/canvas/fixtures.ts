@@ -12,7 +12,9 @@
  *
  * The scenario is unchanged: a working adult, five weeks into a six-module
  * course, who stopped five days ago, with twelve days left before the
- * evaluation period closes. That is the exact moment FARO exists for.
+ * evaluation period closes and four modules still open (3 to 6): nine
+ * activities, 270 minutes, four and a half hours of work. That is the exact
+ * moment FARO exists for. Progress → "Try the scenario" replays it.
  *
  * Course content is in Spanish because the pilot institution teaches in
  * Spanish. FARO translates its own interface, never Canvas content.
@@ -91,7 +93,7 @@ const specs: Spec[] = [
   { moduleId: 5, name: 'Quiz del módulo 5', dueOffsetDays: 8, minutes: 20, done: false },
 
   { moduleId: 6, name: 'Informe de cierre del proyecto', dueOffsetDays: 11, minutes: 60, done: false },
-  { moduleId: 6, name: 'Reflexión final', dueOffsetDays: 12, minutes: 25, done: false },
+  { moduleId: 6, name: 'Reflexión final', dueOffsetDays: 12, minutes: 20, done: false },
 ]
 
 const assignmentId = (i: number) => 100 + i

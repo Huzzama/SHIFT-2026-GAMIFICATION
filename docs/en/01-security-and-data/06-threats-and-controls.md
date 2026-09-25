@@ -40,6 +40,7 @@ A threat model answers three questions: what we want to protect, from whom, and 
 | T23 | A client triggers model calls in a loop and runs up cost | Gemini key | Per-client cap on model calls (`FARO_MENTOR_PER_MINUTE`, 20) on top of the global limit; 32 KB maximum body | [code] | "mentor: per-client cap answers 429 before calling the model", "mentor: a non-JSON body gets 415 and a huge body 413" |
 | T24 | The mentor does the student's graded work | Trust, academic integrity | "Do my homework" requests are answered by the backend without calling the model; the system prompt forbids producing graded work | [code] | "mentor: "do my homework" is refused before any model call" |
 | T25 | Google uses the conversations to improve its products, or human reviewers read them | Identity, trust | Policy: only keys from a project with active billing (paid services); never the free tier with real students (chapter 7) | Policy | — |
+| T26 | Another extension installed in the same browser calls the local backend (on loopback any `chrome-extension://` origin is accepted) | Data, Gemini key | Only when the server listens on loopback; off with `FARO_STRICT_ORIGINS=true` and by itself on any other interface; the mentor's per-client cap still applies; in deployment, exact extension id + `FARO_STRICT_ORIGINS=true` | [code] / Policy | "an extension origin is refused unless extension origins are enabled", "config: half a Canvas setup is refused, mentor-only is accepted" |
 
 ## 6.3 What this model does not cover yet
 

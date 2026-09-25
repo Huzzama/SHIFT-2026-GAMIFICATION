@@ -20,6 +20,7 @@ With only `GEMINI_API_KEY`, it starts **mentor-only**: `/api/launch` and `/canva
 | `FARO_HOST` | `127.0.0.1` | Listening interface |
 | `FARO_PORT` | `3000` | Port |
 | `FARO_ALLOWED_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Allowed browser origins, comma-separated |
+| `FARO_STRICT_ORIGINS` | empty (`false`) | `true` = accept only `FARO_ALLOWED_ORIGINS`, on loopback too (see 5.4) |
 | `FARO_RATE_LIMIT_PER_MINUTE` | `120` | Requests per minute per client |
 | `FARO_CANVAS_TIMEOUT_MS` | `10000` | Maximum time for one Canvas call |
 | `FARO_LOG_LEVEL` | `info` | `info` or `debug` |
@@ -59,7 +60,7 @@ This file **must match** `src/data/canvas/endpoints.ts` in the extension. If a p
 `HttpApp` on top of `node:http`:
 
 - **Router** by method and regular expression. Unknown path → `404`; known path with the wrong method → `405`.
-- **CORS**: if there is an `Origin` and it is not in the list → `403 origin_not_allowed`, with no CORS headers. `OPTIONS` preflight → `204` with `GET, POST, OPTIONS`.
+- **CORS**: if there is an `Origin` and it is not in the list → `403 origin_not_allowed`, with no CORS headers. `OPTIONS` preflight → `204` with `GET, POST, OPTIONS`. When the server listens on loopback (`FARO_HOST` = `127.0.0.1`, `localhost` or `::1`, the default), it also accepts any `chrome-extension://<32 letters a–p>` origin (`allowExtensionOrigins`), so the unpacked extension works without copying its id. It is turned off with `FARO_STRICT_ORIGINS=true`, and is only on when the server listens on loopback (not on e.g. `0.0.0.0`). In production: the exact id in `FARO_ALLOWED_ORIGINS` and `FARO_STRICT_ORIGINS=true`.
 - **POST body**: `application/json` only (otherwise `415 json_required`), at most 32 KB (`MAX_BODY_BYTES`; otherwise `413 body_too_large`), valid JSON (otherwise `400 invalid_json`). The body is never logged or echoed in an error.
 - **Rate limit**: fixed window per remote address; when exceeded → `429` with `Retry-After: 60`. A sweep every minute discards old windows.
 - **Headers** on every response: `Content-Type: application/json; charset=utf-8`, `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-FARO-Request: <id>`.
@@ -114,11 +115,12 @@ Plus the HTTP layer's: `413 body_too_large`, `415 json_required`.
 
 ```text
 [faro-server] listening on http://127.0.0.1:3000
+[faro-server] Accepting the unpacked FARO extension (any chrome-extension:// origin, loopback only)
 [faro-server] Canvas: canvas.instructure.com (read-only, token in memory only)
 [faro-server] Mentor: Gemini gemini-3.5-flash (key in memory only)
 ```
 
-If one of the two pieces is missing, its line says `not configured`. With an invalid configuration:
+The second line appears only when extension origins are accepted (loopback without `FARO_STRICT_ORIGINS=true`). If Canvas or the mentor is missing, its line says `not configured`. With an invalid configuration:
 
 ```text
 [faro-server] Nothing to serve: set CANVAS_API_URL + CANVAS_ACCESS_TOKEN, GEMINI_API_KEY, or both
@@ -133,7 +135,7 @@ If one of the two pieces is missing, its line says `not configured`. With an inv
 
 `fake-gemini.ts` is a fake Gemini: it demands the key in the header the way Google does, records every body and URL it receives so tests can check what would have left for Google, and answers whatever the test picks (JSON, prose, a safety block, an HTTP status or a delay).
 
-`e2e.ts` starts the backend on top of those fakes and runs 36 checks: the 20 for Canvas, CORS, logs and `.env`, and 16 for the mentor, the mentor-only mode and the configuration rules. It runs with `npm test` and exits non-zero on the first failure. What it checks is, literally, what Book 1 claims.
+`e2e.ts` starts the backend on top of those fakes and runs 38 checks: 21 for Canvas, CORS (including that an extension origin is refused when they are not enabled), logs and `.env`, and 17 for the mentor (including the call from the unpacked extension on loopback), the mentor-only mode and the configuration rules (loopback default, `FARO_STRICT_ORIGINS` and the `0.0.0.0` case). It runs with `npm test` and exits non-zero on the first failure. What it checks is, literally, what Book 1 claims.
 
 ## 5.9 Adding a Canvas path (procedure)
 

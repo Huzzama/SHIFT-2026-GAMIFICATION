@@ -92,6 +92,8 @@ interface Route {
 
 export interface HttpOptions {
   allowedOrigins: string[]
+  /** Accept chrome-extension://<32-letter id> origins as well (local development). */
+  allowExtensionOrigins?: boolean
   rateLimitPerMinute: number
   log: (line: Record<string, unknown>) => void
 }
@@ -171,7 +173,8 @@ export class HttpApp {
 
   private corsHeaders(origin: string | undefined): Record<string, string> | null {
     if (!origin) return {}
-    if (!this.opts.allowedOrigins.includes(origin)) return null
+    const extension = this.opts.allowExtensionOrigins === true && /^chrome-extension:\/\/[a-p]{32}$/.test(origin)
+    if (!extension && !this.opts.allowedOrigins.includes(origin)) return null
     return {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',

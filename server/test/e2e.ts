@@ -51,6 +51,7 @@ async function run() {
     host: '127.0.0.1',
     port: 0,
     allowedOrigins: [ORIGIN],
+    allowExtensionOrigins: false,
     rateLimitPerMinute: 40,
     canvasTimeoutMs: 3000,
     logLevel: 'info',
@@ -151,6 +152,11 @@ async function run() {
     const res = await get('/canvas/api/v1/courses/4021', { Origin: 'https://evil.example' })
     assert.equal(res.status, 403)
     assert.equal(res.headers.get('access-control-allow-origin'), null)
+  })
+
+  await check('an extension origin is refused unless extension origins are enabled', async () => {
+    const res = await get('/health', { Origin: 'chrome-extension://abcdefghijklmnopabcdefghijklmnop' })
+    assert.equal(res.status, 403)
   })
 
   await check('CORS preflight succeeds for an allowed origin', async () => {
@@ -261,6 +267,19 @@ async function run() {
       headers: { Origin: origin, 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
+
+  await check('mentor: the unpacked extension can call it when extension origins are on (loopback dev)', async () => {
+    const appExt = buildApp({ env: { ...envM, allowExtensionOrigins: true }, log: () => {} })
+    await appExt.listen(0, '127.0.0.1')
+    const ax = appExt.server.address()
+    const ext = 'chrome-extension://abcdefghijklmnopabcdefghijklmnop'
+    const res = await fetch(`http://127.0.0.1:${typeof ax === 'object' && ax ? ax.port : 0}/health`, { headers: { Origin: ext } })
+    assert.equal(res.status, 200)
+    assert.equal(res.headers.get('access-control-allow-origin'), ext)
+    const bad = await fetch(`http://127.0.0.1:${typeof ax === 'object' && ax ? ax.port : 0}/health`, { headers: { Origin: 'chrome-extension://not-an-id' } })
+    assert.equal(bad.status, 403)
+    await appExt.close()
+  })
 
   await check('mentor: answers with Gemini and returns text + suggestions', async () => {
     gemini.next = { kind: 'json', text: JSON.stringify({ text: 'Piensa en una cafetería…', suggestions: ['Sí', 'No', 'Otro ejemplo'] }) }
@@ -413,6 +432,9 @@ async function run() {
     const e = loadEnv('/nonexistent', { GEMINI_API_KEY: 'k' })
     assert.equal(e.canvasApiUrl, '')
     assert.equal(e.geminiModel, 'gemini-3.5-flash')
+    assert.equal(e.allowExtensionOrigins, true, 'loopback default accepts the unpacked extension')
+    assert.equal(loadEnv('/nonexistent', { GEMINI_API_KEY: 'k', FARO_STRICT_ORIGINS: 'true' }).allowExtensionOrigins, false)
+    assert.equal(loadEnv('/nonexistent', { GEMINI_API_KEY: 'k', FARO_HOST: '0.0.0.0' }).allowExtensionOrigins, false)
   })
 
   console.log(`\n${passed} checks passed`)

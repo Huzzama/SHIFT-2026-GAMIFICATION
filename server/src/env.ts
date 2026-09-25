@@ -26,6 +26,13 @@ export interface Env {
   port: number
   /** Browser origins allowed to call this server. Everything else gets 403. */
   allowedOrigins: string[]
+  /**
+   * Also accept any Chrome extension origin (chrome-extension://<id>). On by
+   * default only when the server listens on loopback, so a developer can load
+   * the unpacked extension without first copying its id into .env. A deployed
+   * server should list the exact extension id instead (FARO_STRICT_ORIGINS=true).
+   */
+  allowExtensionOrigins: boolean
   /** Requests per minute per client before the server answers 429. */
   rateLimitPerMinute: number
   /** Seconds a Canvas call may take before it is abandoned. */
@@ -126,6 +133,7 @@ export function loadEnv(dir = process.cwd(), source: NodeJS.ProcessEnv = process
     allowedOrigins: origins
       ? origins.split(',').map((o) => o.trim()).filter(Boolean)
       : [...DEFAULTS.allowedOrigins],
+    allowExtensionOrigins: get('FARO_STRICT_ORIGINS') !== 'true' && isLoopback(get('FARO_HOST') || DEFAULTS.host),
     rateLimitPerMinute: Number(get('FARO_RATE_LIMIT_PER_MINUTE')) || DEFAULTS.rateLimitPerMinute,
     canvasTimeoutMs: Number(get('FARO_CANVAS_TIMEOUT_MS')) || DEFAULTS.canvasTimeoutMs,
     logLevel,
@@ -135,6 +143,10 @@ export function loadEnv(dir = process.cwd(), source: NodeJS.ProcessEnv = process
     geminiTimeoutMs: Number(get('GEMINI_TIMEOUT_MS')) || DEFAULTS.geminiTimeoutMs,
     mentorPerMinute: Number(get('FARO_MENTOR_PER_MINUTE')) || DEFAULTS.mentorPerMinute,
   }
+}
+
+function isLoopback(host: string): boolean {
+  return host === '127.0.0.1' || host === 'localhost' || host === '::1'
 }
 
 function isSafeUrl(u: string): boolean {
@@ -152,6 +164,7 @@ export function describe(env: Env) {
     host: env.host,
     port: env.port,
     allowedOrigins: env.allowedOrigins,
+    allowExtensionOrigins: env.allowExtensionOrigins,
     tokenPresent: env.canvasAccessToken.length > 0,
     mentor: mentorEnabled(env) ? { provider: 'gemini', model: env.geminiModel } : null,
   }

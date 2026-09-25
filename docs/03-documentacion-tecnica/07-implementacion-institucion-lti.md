@@ -89,4 +89,4 @@ Con esto desaparece `CANVAS_ACCESS_TOKEN` de `.env`: el backend pasa a tener un 
 
 ## 7.6 La extensión en este escenario
 
-Sigue existiendo como opción: quien prefiera el panel lateral en vez del iframe de Canvas la instala, y la extensión llama al mismo backend con la misma sesión (la cookie viaja si `FARO_ALLOWED_ORIGINS` incluye el id de la extensión y la cookie es `SameSite=None`). El código de la extensión no cambia; cambia solo dónde apunta `VITE_FARO_API_URL`.
+Sigue existiendo como opción: quien prefiera el panel lateral en vez del iframe de Canvas la instala, y la extensión llama al mismo backend con la misma sesión (la cookie viaja si `FARO_ALLOWED_ORIGINS` incluye el id exacto de la extensión, con `FARO_STRICT_ORIGINS=true`, y la cookie es `SameSite=None`). El código de la extensión no cambia; cambia solo dónde apunta `VITE_FARO_API_URL`.

@@ -12,7 +12,7 @@ Estas no son preferencias de diseño. Son límites escritos en el código, y cua
 
 **5. FARO no hace tu trabajo calificado.** El Mentor explica, da pistas, organiza y acompaña. Si le pides que resuelva un examen o escriba tu entrega, se niega y te ofrece ayuda para hacerlo tú.
 
-**6. El Mentor solo ve once datos.** Curso, progreso, siguiente actividad, tiempo estimado, tu meta declarada, tu destino en tus palabras, tiempo disponible, impulso, estado de fricción, estilo e idioma. Si tu institución activó Gemini, también tu mensaje y los últimos 8 turnos de la conversación, a través del servidor de FARO. No ve tu nombre, tu correo, tus calificaciones, tu foto ni tu historial completo. La pantalla siempre dice quién te responde.
+**6. El Mentor solo ve once datos.** Curso, progreso, siguiente actividad, tiempo estimado, tu meta declarada, tu destino en tus palabras, tiempo disponible, impulso, estado de fricción, estilo e idioma. Si responde Gemini, también tu mensaje y los últimos 8 turnos de la conversación, a través del servidor de FARO. No ve tu nombre, tu correo, tus calificaciones, tu foto ni tu historial completo. La pantalla siempre dice quién te responde.
 
 **7. FARO no escribe en Canvas.** El permiso para enviar calificaciones existe en el estándar LTI y lo rechazamos explícitamente. Canvas es la fuente de verdad académica; FARO solo lee.
 

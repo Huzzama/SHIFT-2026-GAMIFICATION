@@ -38,7 +38,7 @@ import {
   type CanvasTransport,
   type FixtureRoute,
 } from './transport'
-import { canvasConfig, resolveLaunch, type LaunchContext } from './config'
+import { canvasConfig, mockLaunch, resolveLaunch, type LaunchContext } from './config'
 import type { CourseSnapshot, FaroClient } from '../client'
 import type { CanvasActivityEvent, CanvasAssignment, CanvasModule } from '@/types'
 
@@ -217,6 +217,16 @@ export const fixtureRoutes: FixtureRoute[] = [
   { match: /^\/api\/v1\/courses\/(\d+)\/assignments/, resolve: () => rawAssignments },
   { match: /^\/api\/v1\/courses\/(\d+)\/analytics\/users\/([\w-]+)\/activity$/, resolve: () => rawActivity },
 ]
+
+/**
+ * The demo scenario, always from fixtures: five days away, twelve days and
+ * four and a half hours of work left, four modules open. Used by Progress →
+ * "Try the scenario" so the recovery flow can be shown even when the build
+ * is pointed at a live Canvas; the student's real course is not touched.
+ */
+export function createScenarioClient(): CanvasFaroClient {
+  return new CanvasFaroClient(new MockCanvasTransport(fixtureRoutes), () => Promise.resolve(mockLaunch), (id) => estimatedMinutes[id])
+}
 
 export function createCanvasClient(): CanvasFaroClient {
   if (canvasConfig.mode === 'http') {

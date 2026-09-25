@@ -8,18 +8,19 @@ Marcar cada punto antes de conectar FARO a un Canvas con estudiantes reales. Los
 - [ ] ⚙ El token pertenece a una **cuenta de estudiante** del piloto, no a un docente ni administrador.
 - [ ] ⚙ El token tiene **fecha de expiración** (recomendado: 30 días).
 - [ ] ⚙ `FARO_HOST=127.0.0.1` salvo que haya TLS por delante.
-- [ ] ⚙ `FARO_ALLOWED_ORIGINS` contiene solo los orígenes reales (el id de la extensión cargada, el servidor de desarrollo si aplica).
+- [ ] ⚙ `FARO_ALLOWED_ORIGINS` contiene solo los orígenes reales (el id exacto de la extensión cargada, el servidor de desarrollo si aplica).
+- [ ] ⚙ `FARO_STRICT_ORIGINS=true` en cualquier despliegue que no sea la máquina de un desarrollador: así el backend deja de aceptar cualquier origen `chrome-extension://` (capítulo 3.6).
 - [ ] ⚙ Si se usará el mentor con Gemini: `GEMINI_API_KEY` es de un proyecto de Google Cloud **con facturación activa** (servicios de pago), **nunca** del nivel gratuito (capítulo 7.8).
 - [ ] ⚙ `GEMINI_MODEL` se verificó contra `ai.google.dev/gemini-api/docs/models` (por omisión `gemini-3.5-flash`; los nombres de modelo cambian).
 - [ ] ⚙ `FARO_MENTOR_PER_MINUTE` tiene un valor acordado (por omisión 20 llamadas al modelo por cliente y minuto).
-- [ ] ⚙ `npm test` en `server/` pasa las 36 verificaciones.
+- [ ] ⚙ `npm test` en `server/` pasa las 38 verificaciones.
 - [ ] ⚙ `curl http://127.0.0.1:3000/health` responde con el host de Canvas y `mentor: {provider, model}` (o `null` si no hay clave), y **no** contiene el token ni la clave.
 - [ ] ⚙ El mentor con Gemini se probó contra la API real con la clave del piloto: una respuesta llega con el anillo violeta y **sin** la nota "Gemini no pudo responder…". (En desarrollo solo se verificó contra un Gemini simulado.)
 
 ## B. Antes de cargar la extensión
 
 - [ ] ⚙ Se construyó con `VITE_CANVAS_MODE=http` y `VITE_FARO_API_URL` apuntando al backend.
-- [ ] ⚙ `VITE_MENTOR_MODE` es `gemini` solo si la institución aprobó el mentor con IA; si no, `local`. El pie de FARO Mentor dice lo correcto (*"Responde Gemini, a través del servidor de FARO…"* o *"Mentor local: sin modelo de IA…"*).
+- [ ] ⚙ `VITE_MENTOR_MODE=local` salvo que la institución haya aprobado el mentor con IA; en ese caso, `auto` (por omisión) o `gemini`, con una clave de pago aprobada en el servidor. El pie de FARO Mentor dice lo correcto (*"Responde Gemini, a través del servidor de FARO…"* o *"Mentor local: sin modelo de IA…"*).
 - [ ] ⚙ Ni `.env` ni `.env.local` de la raíz contienen una clave de Gemini.
 - [ ] ⚙ `public/manifest.json` **no** contiene `instructure.com` en `host_permissions`.
 - [ ] ⚙ En *Perfil → Canvas* la insignia dice *En vivo* y el registro muestra estado `200` en las cuatro rutas.

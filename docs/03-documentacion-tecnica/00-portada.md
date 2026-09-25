@@ -40,10 +40,11 @@ Los capítulos 1 a 5 describen el código. Los capítulos 6 y 7 son procedimient
 |---|---|---|
 | raíz | `npm install` | Instala las dependencias de la extensión (68 paquetes) |
 | raíz | `npm run dev` | Servidor de desarrollo de Vite en `http://localhost:5173` |
+| raíz | `npm run server` | El backend con recarga automática, desde la raíz (= `npm --prefix server run dev`) |
 | raíz | `npm run typecheck` | Verifica tipos; si no imprime nada tras el encabezado, pasó |
 | raíz | `npm run build` | Compila la extensión a `dist/` |
 | `server/` | `cp .env.example .env` | Crea la configuración del backend (luego se edita) |
 | `server/` | `npm run dev` | Backend con recarga automática |
 | `server/` | `npm start` | Backend |
-| `server/` | `npm test` | 36 verificaciones contra un Canvas simulado y un Gemini simulado |
+| `server/` | `npm test` | 38 verificaciones contra un Canvas simulado y un Gemini simulado |
 | `server/` | `npm install` | Solo si quieres `npm run typecheck` ahí (instala `typescript` y `@types/node`; el backend en sí no tiene dependencias) |

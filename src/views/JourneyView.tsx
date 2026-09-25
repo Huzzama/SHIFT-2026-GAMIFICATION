@@ -5,8 +5,10 @@
  * the route that is still open - never as a red overdue count - and when the
  * route has drifted, FARO recalculates it instead of declaring Game Over.
  */
-import { Icon } from '@/components/Icon'
+import { Icon, type IconName } from '@/components/Icon'
+import { RouteMap } from '@/components/RouteMap'
 import { mockPresence } from '@/data/community.mock'
+import { courseRoute } from '@/lib/route'
 import { useStore } from '@/state/store'
 import type { Dict } from '@/i18n'
 import type { JourneyMilestone } from '@/types'
@@ -17,6 +19,13 @@ const fmtDue = (iso: string | null, t: Dict) => {
   if (days === 0) return t.journey.due.today
   if (days > 0) return t.journey.due.in(days)
   return t.journey.due.ago(Math.abs(days))
+}
+
+/** Route nodes from the FARO set: a checkpoint is a buoy, any other stop a ring. */
+const nodeIcon = (m: JourneyMilestone): IconName => {
+  const state = m.status === 'missed' ? 'upcoming' : m.status
+  const cap = state.charAt(0).toUpperCase() + state.slice(1)
+  return `state${m.checkpoint ? 'Checkpoint' : 'Node'}${cap}` as IconName
 }
 
 function Stop({ m, t }: { m: JourneyMilestone; t: Dict }) {
@@ -30,13 +39,21 @@ function Stop({ m, t }: { m: JourneyMilestone; t: Dict }) {
 
   return (
     <li className={`stop stop--${m.status}${m.checkpoint ? ' stop--checkpoint' : ''}`}>
-      <span className="stop__dot" />
+      <span className="stop__node" aria-hidden="true">
+        <Icon name={nodeIcon(m)} size={24} />
+      </span>
       <div className="stop__title">
         {m.title}
         {m.checkpoint && <span className="checkpoint-flag">{t.journey.stop.checkpoint}</span>}
       </div>
       <div className="stop__meta">
-        {m.status === 'current' ? `${t.journey.stop.here} · ${meta}` : meta}
+        {m.status === 'current' ? (
+          <>
+            <Icon name="stateShipSailing" size={14} className="stop__ship" /> {t.journey.stop.here} · {meta}
+          </>
+        ) : (
+          meta
+        )}
       </div>
     </li>
   )
@@ -58,6 +75,7 @@ export function JourneyView({
     purpose,
     availableMinutes,
     completeMilestone,
+    snapshot,
   } = useStore()
 
   if (!journey || !friction) return <p className="muted">{t.journey.loading}</p>
@@ -66,6 +84,9 @@ export function JourneyView({
     ? journey.milestones.find((m) => m.id === nextAction.milestoneId)
     : undefined
 
+  const route = courseRoute(journey, new Map((snapshot?.modules ?? []).map((m) => [m.id, m.name])))
+  const mapCopy = t.journey.map
+
   const groups = journey.milestones.reduce<Record<string, JourneyMilestone[]>>((acc, m) => {
     const key = m.subtitle ?? journey.courseName
     ;(acc[key] ??= []).push(m)
@@ -73,11 +94,34 @@ export function JourneyView({
   }, {})
 
   return (
-    <div className="stack">
+    <div className="journey">
+      {/* The chart of the voyage: where am I, where am I going, and what
+          happens when the route changes. */}
+      <section className="card journey__map">
+        <div className="row row--between">
+          <div className="eyebrow">{mapCopy.eyebrow}</div>
+          <span className="muted" style={{ fontSize: 'var(--text-xs)' }}>{mapCopy.legend}</span>
+        </div>
+        <RouteMap
+          route={route}
+          labels={{
+            start: mapCopy.start,
+            destination: mapCopy.destination,
+            destinationSub: purpose?.destination || null,
+            here: mapCopy.here,
+            harbor: mapCopy.harbor,
+            recalculating: mapCopy.recalculating,
+            recalculated: mapCopy.recalculated,
+            module: mapCopy.module,
+          }}
+        />
+      </section>
+
+      <div className="journey__side stack">
       {journey.recalculated && (
         <div className="recalc">
           <span className="recalc__icon">
-            <Icon name="refresh" size={20} />
+            <Icon name="recalculate" size={22} />
           </span>
           <div>
             <div className="recalc__title">{t.journey.recalc.title}</div>
@@ -100,7 +144,7 @@ export function JourneyView({
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 'var(--text-xl)', fontWeight: 750, color: 'var(--forest-700)' }}>
+            <div className="journey__pct">
               {journey.progressPercent}%
             </div>
             <div className="muted" style={{ fontSize: 'var(--text-xs)' }}>{t.home.ofRoute}</div>
@@ -119,7 +163,7 @@ export function JourneyView({
       {nextAction && (
         <div className="nba">
           <div className="nba__eyebrow">
-            <Icon name="flag" size={14} /> {t.home.nba.eyebrow}
+            <Icon name="compass" size={16} /> {t.home.nba.eyebrow}
           </div>
           <div className="nba__title">{nextAction.title}</div>
           <div className="nba__meta">
@@ -183,6 +227,7 @@ export function JourneyView({
             </div>
           ))}
         </div>
+      </div>
       </div>
     </div>
   )

@@ -2,7 +2,7 @@
 
 ## 8.1 What is verified automatically
 
-`cd server && npm test` starts a fake Canvas with real pagination, a fake Gemini (`server/test/fake-gemini.ts`) and the backend on top, and runs these 36 checks:
+`cd server && npm test` starts a fake Canvas with real pagination, a fake Gemini (`server/test/fake-gemini.ts`) and the backend on top, and runs these 38 checks:
 
 ```text
 ok  health names the Canvas host and never the token
@@ -16,6 +16,7 @@ ok  a write is refused even on an allowed path
 ok  an unknown query parameter is refused
 ok  path traversal is refused
 ok  a browser origin outside the list gets 403 and no data
+ok  an extension origin is refused unless extension origins are enabled
 ok  CORS preflight succeeds for an allowed origin
 ok  responses carry no-store and nosniff
 ok  Canvas 404 is passed through as 404
@@ -25,6 +26,7 @@ ok  rate limit trips after the configured burst
 ok  Canvas 401 on analytics is passed through so the client can fall back
 ok  a wrong token is reported as rejected, not as a generic failure
 ok  .env parser handles comments, quotes and CRLF
+ok  mentor: the unpacked extension can call it when extension origins are on (loopback dev)
 ok  mentor: answers with Gemini and returns text + suggestions
 ok  mentor: the key goes in a header, never in the URL
 ok  mentor: extra fields in the context never reach Gemini
@@ -42,10 +44,10 @@ ok  mentor: without a key the route answers 503 so the extension falls back
 ok  mentor-only server: Canvas routes say canvas_not_configured
 ok  config: half a Canvas setup is refused, mentor-only is accepted
 
-36 checks passed
+38 checks passed
 ```
 
-The last 16 cover the mentor: that Gemini's reply becomes `{ text, suggestions }`; that the key goes only in the header; that extra context fields never reach Gemini; that Teach me mode reaches the prompt; that history is trimmed to 8 turns; that "do my homework" is answered without calling the model; the `400`, `413` and `415`; that a prose reply is accepted; that a rejected key gives `mentor_key_rejected` without echoing Google's body; the safety block; the `504`; the per-client `429`; that neither the key nor the conversation appears in the log; the `503` without a key; a mentor-only server's `canvas_not_configured` and `/health`; and the configuration rules.
+One of the first checks that a `chrome-extension://` origin is refused when the server does not accept extension origins. The last 17 cover the mentor: that the unpacked extension can call it when the server accepts extension origins (loopback development); that Gemini's reply becomes `{ text, suggestions }`; that the key goes only in the header; that extra context fields never reach Gemini; that Teach me mode reaches the prompt; that history is trimmed to 8 turns; that "do my homework" is answered without calling the model; the `400`, `413` and `415`; that a prose reply is accepted; that a rejected key gives `mentor_key_rejected` without echoing Google's body; the safety block; the `504`; the per-client `429`; that neither the key nor the conversation appears in the log; the `503` without a key; a mentor-only server's `canvas_not_configured` and `/health`; and the configuration rules (including the loopback default, `FARO_STRICT_ORIGINS` and the `0.0.0.0` case).
 
 It uses no test framework: `node:assert` and a ten-line `check(name, fn)`. The process exits non-zero on the first failure, so it works as a CI step.
 
@@ -66,7 +68,9 @@ This script is not in the repository because it depends on compiling the extensi
 
 The full path (extension with `VITE_MENTOR_MODE=gemini` → `POST /api/mentor` → Gemini) was verified in the browser **against the fake Gemini**, including the fallback: with the fake down, the extension answered with the local mentor and the note *"Gemini could not answer just now, so the local mentor did"*.
 
-**It has not been exercised against Google's real API** from the development environment: the network policy blocked it. The team validates it with its own key (chapter 6 and the README). Model names change: check `GEMINI_MODEL` at `ai.google.dev/gemini-api/docs/models` before trying.
+With the default mode (`VITE_MENTOR_MODE=auto`) it was also verified in the browser preview: with the backend and the fake Gemini running, the footer said *"Answers by Gemini…"* and a Gemini reply arrived; with the backend stopped, the footer said *"Local mentor…"* and the local mentor answered.
+
+**It has not been exercised against Google's real API** from the development environment: the network policy blocked it. The team validates it with its own key (chapter 6.9 and the README). Model names change: check `GEMINI_MODEL` at `ai.google.dev/gemini-api/docs/models` before trying.
 
 ## 8.3 Manual verification in the interface
 

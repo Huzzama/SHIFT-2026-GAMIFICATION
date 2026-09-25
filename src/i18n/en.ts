@@ -56,6 +56,30 @@ export const en: Dict = {
       clear: 'Clear plan',
       done: 'done',
     },
+    horizon: { eyebrow: 'Your horizon', empty: 'Set your destination' },
+    trail: {
+      title: (i: number, n: number) => `Module ${i} of ${n}`,
+      finished: 'Route complete',
+      destination: 'Destination',
+    },
+    stats: {
+      momentum: 'Momentum',
+      route: 'Journey',
+      rhythm: (n: number) => `rhythm: ${n}/7 days`,
+      modules: (d: number, n: number) => `${d} of ${n} modules`,
+    },
+    says: {
+      fits: (m: number) => `You have ${m} minutes today. Let's do the one thing that moves you forward.`,
+      longer: (n: number, m: number) => `Your next step takes about ${n} minutes. With your ${m} you can start it and pause without losing anything.`,
+      returning: (m: number) => `You only need ${m} minutes to get your route moving again.`,
+      done: 'You reached the destination. What you built here still counts.',
+    },
+    support: {
+      sos: 'SOS',
+      sosSub: 'I’m stuck',
+      room: 'Study room',
+      roomSub: (n: number) => `${n} studying now`,
+    },
     achievementsCard: { label: 'You have', earned: (n: number) => `${n} ${n === 1 ? 'achievement' : 'achievements'}`, sub: 'for resilience' },
     mentorCard: { label: 'FARO Mentor', title: 'Ask FARO', sub: 'Guidance, not ready-made answers' },
     welcomeBack: { title: 'Welcome back.', body: 'Your progress is still here. Let us find a way back in that fits your week — no catching up required.', cta: 'Recalculate my route' },
@@ -65,6 +89,7 @@ export const en: Dict = {
       meta: (min: number, have: number) => `About ${min} minutes · you told us you have ${have}.`,
       start: 'Start this step',
       ask: 'Ask FARO',
+      minutes: (m: number) => `${m} min`,
       empty: 'Nothing is waiting for you right now. You have reached the end of the route.',
     },
     visit: {
@@ -103,6 +128,17 @@ export const en: Dict = {
       shortest: 'It is the shortest step available — start it and pause whenever you need.',
     },
     reconnect: 'Reconnect:',
+    map: {
+      eyebrow: 'Your voyage',
+      start: 'Start',
+      destination: 'Destination',
+      here: 'You are here',
+      harbor: 'Safe harbor',
+      recalculating: 'Recalculating your route…',
+      recalculated: 'Route recalculated',
+      module: (n: number, name: string) => `M${n} · ${name}`,
+      legend: 'The route can change. The destination doesn’t.',
+    },
   },
 
   mentor: {
@@ -260,6 +296,18 @@ export const en: Dict = {
       body: 'For helping classmates, not for being popular. Earned the same way as resilience ones: by what you actually did.',
       viewProfile: 'See your profile',
     },
+    demo: {
+      eyebrow: 'Demo',
+      body: 'For presenting FARO or trying it from scratch. None of this touches Canvas.',
+      scenario: 'Try the comeback scenario',
+      scenarioHint: '5 days away · 12 days left · 4.5 h and 4 modules to finish the block. Opens Recovery.',
+      scenarioOn: 'Demo scenario loaded: the course comes from sample data, not your Canvas.',
+      reset: 'Reset everything',
+      resetHint: 'Clears your destination, sessions, points and preferences, and starts again from the welcome screen.',
+      confirm: 'Sure? This cannot be undone.',
+      confirmYes: 'Yes, reset',
+      cancel: 'Cancel',
+    },
     week: {
       eyebrow: 'Your rhythm',
       count: (n: number) => `${n} active ${n === 1 ? 'day' : 'days'} this week`,
@@ -295,6 +343,17 @@ export const en: Dict = {
     plan: {
       analyzing: 'Reviewing your progress…',
       recalculating: 'Recalculating your route…',
+      recalcCard: {
+        title: 'Recalculating your route…',
+        done: 'Your new route is ready',
+        meta: (d: number, m: number, min: number) => `${d} ${d === 1 ? 'day' : 'days'} · ${m} ${m === 1 ? 'module' : 'modules'} · ${min} min a day`,
+        keep: 'The destination did not change. Only the route did.',
+      },
+      resilience: {
+        eyebrow: 'Resilience',
+        of: (a: number, b: number) => `${a} of ${b}`,
+        body: 'Earned by coming back and carrying on, not by being perfect.',
+      },
       welcome: {
         title: 'Welcome back',
         sub: 'Your progress is still here. FARO recalculated your route.',
@@ -654,10 +713,10 @@ export const en: Dict = {
 
   review: {
     offer: {
-      eyebrow: 'Reconnect in 2 minutes',
-      title: 'Three questions on what you saw last',
+      eyebrow: 'Comeback mission',
+      title: 'Reconnect in 3 minutes',
       body: (module: string) =>
-        `About ${module}. It is not a test and does not count towards your grade: it is so you can check you have not forgotten everything.`,
+        `Three quick cards on what you already know about ${module}. It is not a test and does not count towards your grade.`,
       points: (n: number) => `+${n} points when you finish`,
       start: 'Start',
       skip: 'Not now',

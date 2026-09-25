@@ -6,8 +6,8 @@ Esta lista existe para que nadie —ni el jurado, ni una institución, ni el equ
 
 | Componente | Estado |
 |---|---|
-| Backend con token, lista blanca, paginación, CORS, límite de tasa, logs sin datos sensibles | Implementado; 36 verificaciones automáticas en total |
-| Mentor con Gemini: `POST /api/mentor`, contexto revalidado, historial de 8 turnos, respuesta de guardarraíl sin modelo, códigos de respaldo, clave y conversación fuera de los logs, modo solo mentor | Implementado; verificado contra un Gemini simulado (16 de las 36 verificaciones) y de punta a punta en el navegador contra ese simulado, incluido el respaldo al mentor local. **No se ha ejercitado contra la API real de Google** desde el entorno de desarrollo (la política de red lo bloqueó); el equipo lo valida con su clave. Los nombres de modelo cambian: verificar `GEMINI_MODEL` |
+| Backend con token, lista blanca, paginación, CORS, límite de tasa, logs sin datos sensibles | Implementado; 38 verificaciones automáticas en total |
+| Mentor con Gemini: `POST /api/mentor`, contexto revalidado, historial de 8 turnos, respuesta de guardarraíl sin modelo, códigos de respaldo, clave y conversación fuera de los logs, modo solo mentor | Implementado; verificado contra un Gemini simulado (17 de las 38 verificaciones) y de punta a punta en el navegador contra ese simulado, incluido el respaldo al mentor local y la detección automática (`VITE_MENTOR_MODE=auto`: con backend, responde Gemini; con el backend detenido, el mentor local). **No se ha ejercitado contra la API real de Google** desde el entorno de desarrollo (la política de red lo bloqueó); el equipo lo valida con su clave. Los nombres de modelo cambian: verificar `GEMINI_MODEL` |
 | Mentor local y momentos estructurados (registro de ánimo, Enfoque, Volver, Enséñame con el banco del demo, plan de fin de semana, puntos a TecmiRewards) | Implementados; calculados en la extensión con datos reales, nunca por un modelo |
 | ¿Cuánto tiempo tienes?, tarjeta *Tu plan*, semana de ritmo en Progreso | Implementados (`timeSession.ts`, `rhythm.ts`) |
 | Extensión en modo `http` contra el backend, sin credenciales ni permiso hacia `instructure.com` | Implementado; capa de datos verificada end-to-end |
@@ -25,7 +25,7 @@ Esta lista existe para que nadie —ni el jurado, ni una institución, ni el equ
 | Componente | Qué falta |
 |---|---|
 | Conexión a Canvas Free-for-Teacher | Un token de estudiante y el id del curso (capítulo 6, 30 minutos) |
-| Mentor con la API real de Gemini | Una clave de un proyecto con facturación activa y `VITE_MENTOR_MODE=gemini` (capítulo 6.9) |
+| Mentor con la API real de Gemini | Una clave de un proyecto con facturación activa en `server/.env`; con el modo por omisión (`auto`) la extensión la detecta sola (capítulo 6.9) |
 
 ## Simulado, y etiquetado como tal
 

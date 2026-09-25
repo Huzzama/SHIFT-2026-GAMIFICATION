@@ -25,7 +25,7 @@ import { buildMentorContext } from '@/lib/mentorContext'
 import { pathToPoints } from '@/lib/rewardPath'
 import { answerTeach, lessonQuestions, teachTopics, type TeachState } from '@/lib/teach'
 import { buildTimeSession, openSteps, planDays, sessionMinutes } from '@/lib/timeSession'
-import { mentorMode, mentorService, mentorStyles } from '@/services/mentor'
+import { mentorService, mentorStyles, probeGemini, type MentorAvailability } from '@/services/mentor'
 import { useStore } from '@/state/store'
 import type { JourneyMilestone, LifeState, MentorChoice, MentorMessage, MentorMode, WeekPlan } from '@/types'
 
@@ -35,8 +35,8 @@ const now = () => new Date().toISOString()
 const REWARD_WORDS = /\b(puntos?|points?|recompensas?|rewards?|tecmi ?rewards?|premios?|canje|redeem)\b/i
 
 const MODE_ICONS: Record<Exclude<MentorMode, 'chat'>, IconName> = {
-  focus: 'clock',
-  recovery: 'wave',
+  focus: 'compass',
+  recovery: 'recalculate',
   teach: 'book',
   planning: 'calendar',
 }
@@ -77,6 +77,7 @@ export function MentorView({
   const [teach, setTeach] = useState<TeachState | null>(null)
   const [satMinutes, setSatMinutes] = useState<number | null>(null)
   const [mode, setMode] = useState<MentorMode>('chat')
+  const [ai, setAi] = useState<MentorAvailability>('checking')
   const threadRef = useRef<HTMLDivElement>(null)
   /** A plan between "here is a plan" and "keep it". Not rendered, so not state. */
   const pendingPlan = useRef<WeekPlan | null>(null)
@@ -88,6 +89,15 @@ export function MentorView({
   )
   // Lessons exist only for the course the bank was written for.
   const hasLessons = !!journey && journey.courseId === REVIEW_BANK_COURSE_ID
+
+  // Is Gemini available through the backend right now? Asked each time the mentor opens.
+  useEffect(() => {
+    let alive = true
+    void probeGemini(true).then((ok) => alive && setAi(ok ? 'gemini' : 'local'))
+    return () => {
+      alive = false
+    }
+  }, [])
 
   useEffect(() => {
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: 'smooth' })
@@ -178,7 +188,7 @@ export function MentorView({
   }
 
   function teachAsk(): MentorMessage {
-    if (mentorMode === 'gemini') {
+    if (ai === 'gemini') {
       const topics = hasLessons ? teachTopics(journey!, reviewBank, moduleNames).slice(0, 3).map((x) => x.name) : []
       return faro(m.teach.askOpen, undefined, topics.map((x) => m.teach.topicMessage(x)))
     }
@@ -500,7 +510,7 @@ export function MentorView({
       </div>
 
       <p className="mentor__note">
-        {m.note} {mentorMode === 'gemini' ? m.source.gemini : m.source.local}
+        {m.note} {ai === 'gemini' ? m.source.gemini : ai === 'local' ? m.source.local : ''}
       </p>
     </div>
   )

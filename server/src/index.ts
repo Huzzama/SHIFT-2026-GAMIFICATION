@@ -30,6 +30,9 @@ async function main() {
 
   const d = describe(env)
   console.log(`[faro-server] listening on http://${d.host}:${d.port}`)
+  if (d.allowExtensionOrigins) {
+    console.log('[faro-server] Accepting the unpacked FARO extension (any chrome-extension:// origin, loopback only)')
+  }
   console.log(
     d.canvasHost
       ? `[faro-server] Canvas: ${d.canvasHost} (read-only, token in memory only)`

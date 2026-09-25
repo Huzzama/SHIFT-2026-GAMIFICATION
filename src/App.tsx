@@ -14,6 +14,7 @@ import { ProgressView } from '@/views/ProgressView'
 import { PurposeView } from '@/views/PurposeView'
 import { RecoveryView } from '@/views/RecoveryView'
 import { RewardsView } from '@/views/RewardsView'
+import { useCommunity } from '@/state/community'
 import { useStore } from '@/state/store'
 import type { LifeState } from '@/types'
 
@@ -41,16 +42,17 @@ type View = Tab | 'recovery' | 'purpose' | 'profile'
  * people, the payoff and the record of what was built come after.
  */
 const TABS: { id: Tab; icon: IconName }[] = [
-  { id: 'home', icon: 'home' },
+  { id: 'home', icon: 'compass' },
   { id: 'journey', icon: 'route' },
   { id: 'mentor', icon: 'lighthouse' },
-  { id: 'community', icon: 'user' },
-  { id: 'rewards', icon: 'gift' },
-  { id: 'progress', icon: 'chart' },
+  { id: 'community', icon: 'fleet' },
+  { id: 'rewards', icon: 'reward' },
+  { id: 'progress', icon: 'beacon' },
 ]
 
 export default function App() {
-  const { loading, loadError, reload, purpose, friction, setLifeState, t } = useStore()
+  const { loading, loadError, reload, purpose, friction, setLifeState, reset, startScenario, t } = useStore()
+  const community = useCommunity()
   const [view, setView] = useState<View>('home')
   const [profileAuthorId, setProfileAuthorId] = useState('me')
 
@@ -132,7 +134,7 @@ export default function App() {
               className={`navitem${tab === id ? ' navitem--active' : ''}${id === 'mentor' ? ' navitem--faro' : ''}`}
               onClick={() => setView(id)}
             >
-              <Icon name={icon} size={20} />
+              <Icon name={icon} size={20} tone={tab === id ? undefined : 'none'} />
               {t.shell.nav[id]}
             </button>
           ))}
@@ -205,6 +207,16 @@ export default function App() {
               onOpenJourney={() => setView('journey')}
               onEditPurpose={() => setView('purpose')}
               onOpenProfile={() => openProfile('me')}
+              onStartScenario={() => {
+                community.reset()
+                setView('recovery')
+                void startScenario()
+              }}
+              onReset={() => {
+                community.reset()
+                reset()
+                setView('home')
+              }}
             />
           )}
           {view === 'profile' && (
@@ -230,10 +242,10 @@ export default function App() {
             >
               {id === 'mentor' ? (
                 <span className="tab__beacon">
-                  <Icon name={icon} size={24} stroke={2} />
+                  <Icon name={tab === id ? 'stateLighthouseGuiding' : icon} size={24} stroke={2} />
                 </span>
               ) : (
-                <Icon name={icon} size={22} stroke={tab === id ? 2.2 : 1.8} />
+                <Icon name={icon} size={22} stroke={tab === id ? 2.2 : 1.8} tone={tab === id ? undefined : 'none'} />
               )}
               {t.shell.nav[id]}
             </button>

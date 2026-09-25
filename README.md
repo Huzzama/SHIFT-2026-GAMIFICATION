@@ -7,9 +7,13 @@ A Canvas LMS companion for adult learners, built as a Manifest V3 side panel.
 It runs in two modes: **mock** (fixtures answer the real Canvas API paths, no
 backend needed — the default) and **http** (a small backend in `server/` holds
 the Canvas token and forwards only allow-listed, read-only paths). The mentor
-has its own switch: **local** (rule-based, on the device, nothing leaves it —
-the default) or **gemini** (Google Gemini through the same backend, which holds
-the API key; the local mentor answers whenever Gemini cannot).
+has its own switch, `VITE_MENTOR_MODE`: **auto** (the default — when the mentor
+opens, the extension asks the backend's `GET /health`, with a 2 s timeout, cached
+30 s and no student data; if the server has a Gemini key, Gemini answers, with
+the local mentor as per-message fallback; if the server is down or has no key,
+the local mentor answers), **local** (rule-based, on the device, nothing leaves
+it — not even that check) or **gemini** (always tries the backend, local
+fallback). The mentor footer says which one is answering.
 
 ## Run it (mock mode)
 
@@ -28,11 +32,21 @@ Load as an extension: `chrome://extensions` → enable Developer mode →
 cd server
 cp .env.example .env            # fill CANVAS_API_URL, CANVAS_ACCESS_TOKEN, FARO_COURSE_ID
 npm start                       # Node 22.18+; no dependencies to install
-npm test                        # 36 checks against a fake Canvas and a fake Gemini
+npm test                        # 38 checks against a fake Canvas and a fake Gemini
 ```
 
 Then in the project root create `.env.local` with `VITE_CANVAS_MODE=http` and
-run `npm run dev` or `npm run build`. The extension never sees the token; see
+run `npm run dev` or `npm run build`.
+
+Both processes can be started from the root: terminal 1 `npm run server`
+(= `npm --prefix server run dev`), terminal 2 `npm run dev` (browser) or
+`npm run build` and load `dist/` unpacked (extension). While the server listens
+on loopback (the default `FARO_HOST=127.0.0.1`) it accepts any
+`chrome-extension://` origin, so the unpacked extension works without copying
+its id into `FARO_ALLOWED_ORIGINS`; it prints *Accepting the unpacked FARO
+extension (any chrome-extension:// origin, loopback only)*. For any deployment,
+list the exact extension id and set `FARO_STRICT_ORIGINS=true` (it is also off
+automatically when the server listens on another host, e.g. `0.0.0.0`). The extension never sees the token; see
 `docs/03-documentacion-tecnica/06-implementacion-cuenta-gratuita.md` for the
 step-by-step against a free Instructure account.
 
@@ -42,11 +56,15 @@ step-by-step against a free Instructure account.
    `GEMINI_MODEL`, default `gemini-3.5-flash` — model names change, check
    <https://ai.google.dev/gemini-api/docs/models>). Canvas is optional: with
    only the key the backend runs mentor-only.
-2. Run `npm run dev` inside `server/`. The start-up line should read
+2. Start the server: `npm run server` from the root (or `npm run dev` inside
+   `server/`). The start-up line should read
    `Mentor: Gemini <model> (key in memory only)`.
-3. In the project root, set `VITE_MENTOR_MODE=gemini` in `.env.local`.
-4. Restart `npm run dev` at the root.
+3. Open FARO (`npm run dev`, or the loaded extension) and the Mentor. With the
+   default `VITE_MENTOR_MODE=auto` it picks Gemini up by itself — no rebuild,
+   no `.env.local`. The footer should read *Answers by Gemini…*.
 
+If an institution has not approved the AI mentor, build with
+`VITE_MENTOR_MODE=local` (or do not give the server a `GEMINI_API_KEY`).
 The key never goes in the extension or in `.env.local`. With real students,
 use only a key from a Google Cloud project with **active billing** (the
 Gemini API's Paid Services): on the free tier Google uses prompts to improve
@@ -55,7 +73,10 @@ its products and human reviewers may read them — see
 users must be 18+.
 
 This path is tested against a fake Gemini (backend checks and end to end in
-the browser, including fallback to the local mentor). It has **not** been
+the browser, including fallback to the local mentor; with the default `auto`
+build, backend + fake Gemini gave a Gemini reply and the *Answers by Gemini…*
+footer, and with the backend stopped the footer switched to *Local mentor…*
+and the local mentor answered). It has **not** been
 exercised against Google's real API from the development environment — the
 network policy blocked it — so validate it with your own key.
 
@@ -92,9 +113,9 @@ is never translated by FARO — only FARO's own interface is.
 | FARO Points | Real, from actual completed actions — see `lib/points.ts` |
 | Impact (rewards) | Real rules (`lib/rewards.ts`, `lib/rewardPath.ts`); prototype integration with TecmiRewards — FARO counts points and issues nothing. **Amounts, previous courses of the semester and redemption are simulated** and labelled on screen. No public TecmiRewards API was found, so the integration must be validated with Tecmilenio |
 | Canvas data | Two modes: **mock** fixtures (default) or **live** through the backend (`VITE_CANVAS_MODE=http`) |
-| Backend | Real: `server/`, zero-dependency Node, holds the Canvas token and the Gemini key, allow-listed read-only proxy, `POST /api/mentor`, 36 e2e checks |
+| Backend | Real: `server/`, zero-dependency Node, holds the Canvas token and the Gemini key, allow-listed read-only proxy, `POST /api/mentor`, 38 e2e checks |
 | Mentor, structured moments | Real, computed on the device from real data (`lib/timeSession.ts`, `lib/rewardPath.ts`, `lib/teach.ts`, `lib/rhythm.ts`) — never by a model. Local Teach me lessons exist only for the demo course's review bank |
-| Mentor, open conversation | **local** (default): rule-based, bilingual, nothing leaves the device. **gemini** (`VITE_MENTOR_MODE=gemini`): Gemini through the backend with the 11-field context, the message and the last 8 turns; falls back to local. Tested against a fake Gemini only — **not yet against Google's real API** |
+| Mentor, open conversation | **auto** (default): Gemini when the backend's `/health` reports a mentor, local otherwise. **local**: rule-based, bilingual, nothing leaves the device. **gemini**: always Gemini through the backend with the 11-field context, the message and the last 8 turns; falls back to local. Tested against a fake Gemini only — **not yet against Google's real API** |
 | LTI 1.3, OAuth2 per student, PostgreSQL | Designed and specified (`server/src/routes/lti.ts`, `docs/`), not built |
 
 The mock scenario is deliberate: a working adult, 5 weeks into a 6-module course,
@@ -147,7 +168,7 @@ src/
               points (FARO Points config + mock balance), rhythm (Learning Rhythm + week),
               timeSession (time → session, weekend plan), rewardPath (path to the next
               milestone), teach (local Teach me loop), rewards, reviewCards, recoveryPlanner
-  services/   mentor.ts                     ← Local | Http | Hybrid (Gemini + local fallback)
+  services/   mentor.ts                     ← Local | Http | Hybrid (Gemini + local fallback) | Auto
   state/      store.tsx (lang + t live here), theme.tsx (light/dark/system), storage.ts
   components/ Wordmark, Icon, Cards, HeroArt, MomentumBadge, LangToggle, ThemeToggle
   views/      Dashboard, Journey, Mentor, Rewards (the Impact tab), Progress, Recovery, Purpose

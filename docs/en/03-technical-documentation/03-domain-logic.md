@@ -188,7 +188,7 @@ A `StudySession` is what FARO notes down when the student marks a step as done. 
 
 ## 3.9 `mentorContext.ts` — the privacy boundary
 
-One function, `buildMentorContext`, that produces the eleven fields of `MentorContext`. If a piece of data is not built here, the mentor does not receive it. It does not read `Profile`. It is the only file Book 1 cites as the mentor's data contract. In `gemini` mode, the backend applies the same contract again (`sanitizeMentorRequest`, chapter 5): the extension is not the only barrier.
+One function, `buildMentorContext`, that produces the eleven fields of `MentorContext`. If a piece of data is not built here, the mentor does not receive it. It does not read `Profile`. It is the only file Book 1 cites as the mentor's data contract. When Gemini answers, the backend applies the same contract again (`sanitizeMentorRequest`, chapter 5): the extension is not the only barrier.
 
 ## 3.10 `timeSession.ts` — "how much time do you have?"
 
@@ -238,7 +238,7 @@ wrong option → { wrong, question, remaining: options without those already tri
 
 With `next`, the Mentor asks the second, slightly different question; with `null`, it suggests applying it to the next step. With `wrong`, it repeats the key idea (`explain`) and asks again without the option already tried. No points are at stake.
 
-Lessons exist only for the bank's course (`REVIEW_BANK_COURSE_ID`). In `gemini` mode, open topics go to the backend with `mode: 'teach'` (the prompt's TEACH MODE, chapter 5).
+Lessons exist only for the bank's course (`REVIEW_BANK_COURSE_ID`). When Gemini is available, open topics go to the backend with `mode: 'teach'` (the prompt's TEACH MODE, chapter 5).
 
 ## 3.13 `rhythm.ts` — the rhythm week
 

@@ -4,10 +4,10 @@ The **FARO** tab. A chat, but not a generic chatbot: it only knows about your co
 
 ## Who is answering
 
-The bottom of the screen always says which of the two mentors is answering you:
+The bottom of the screen always says which of the two mentors is answering you. FARO checks every time you open the Mentor: it asks FARO's server whether it has Gemini configured (sending nothing about you).
 
-- **Local mentor** — *"Local mentor: no AI model, nothing leaves your device."* This is the default. It answers in your browser, with fixed rules.
-- **Gemini** — *"Answers by Gemini, through FARO's server. It sees your course progress and your goal — never who you are."* Only if your institution turned it on. Messages written by Gemini carry a **violet ring** on FARO's avatar.
+- **Local mentor** — *"Local mentor: no AI model, nothing leaves your device."* It answers in your browser, with fixed rules. It is the one that answers if FARO's server is unavailable or has no Gemini, or if your institution kept it that way.
+- **Gemini** — *"Answers by Gemini, through FARO's server. It sees your course progress and your goal — never who you are."* Only if FARO's server has Gemini configured. Messages written by Gemini carry a **violet ring** on FARO's avatar.
 
 If Gemini cannot answer at that moment, the local mentor answers and says so at the end of the message: *"Gemini could not answer just now, so the local mentor did."* You are never left without a reply.
 

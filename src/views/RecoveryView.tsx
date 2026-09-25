@@ -21,6 +21,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '@/components/Icon'
 import { ReviewDeck } from '@/components/ReviewDeck'
+import { RouteRecalc } from '@/components/RouteRecalc'
 import { useStore } from '@/state/store'
 import { pointsConfig } from '@/lib/points'
 import { reviewedToday } from '@/lib/reviewCards'
@@ -34,7 +35,8 @@ import {
   strategies,
   todaysOneThing,
 } from '@/lib/recoveryPlanner'
-import type { DailyTimeChoice, PlanDay, PlanItem, StrategyId } from '@/types'
+import type { AchievementId, DailyTimeChoice, PlanDay, PlanItem, StrategyId } from '@/types'
+import type { IconName } from '@/components/Icon'
 
 /** Respect the OS setting: the route animation is a nicety, never a gate. */
 const reducedMotion = () => {
@@ -55,6 +57,18 @@ const hhmm = (minutes: number) => {
 const TIME_CHOICES: DailyTimeChoice[] = [15, 30, 45, 60, 'varies']
 
 type Stage = 'analyzing' | 'ready' | 'recalculating'
+
+/**
+ * Resilience in the ship's own language: coming back, a new route, rough
+ * water crossed, a well-aimed session. Finisher stays on Progress; here it
+ * would read as a demand.
+ */
+const RESILIENCE: { id: AchievementId; icon: IconName }[] = [
+  { id: 'the_comeback', icon: 'stateShipReturning' },
+  { id: 'back_on_track', icon: 'stateShipNewRoute' },
+  { id: 'weathered_the_storm', icon: 'stateShipRoughWater' },
+  { id: 'smart_session', icon: 'compass' },
+]
 
 export function RecoveryView({
   onAskMentor,
@@ -84,6 +98,7 @@ export function RecoveryView({
     reviews,
     reviewSet,
     reviewOffered,
+    achievements,
   } = useStore()
 
   const [stage, setStage] = useState<Stage>('analyzing')
@@ -95,6 +110,8 @@ export function RecoveryView({
   const [finished, setFinished] = useState<PlanItem | null>(null)
   const [deckOpen, setDeckOpen] = useState(false)
   const [reviewSkipped, setReviewSkipped] = useState(false)
+  /** "Recalculating…" → "Your new route is ready", once per change of pace. */
+  const [routeReady, setRouteReady] = useState(false)
 
   /* -- Stage 2: analysing. Brief, honest, and skipped when motion is off. */
   useEffect(() => {
@@ -144,6 +161,15 @@ export function RecoveryView({
     [work, journey, dailyMinutes, strategyId],
   )
 
+  /* -- The recalculation card: draw the new route, then say it is ready. */
+  useEffect(() => {
+    if (stage !== 'ready') return
+    if (reducedMotion()) return setRouteReady(true)
+    setRouteReady(false)
+    const id = setTimeout(() => setRouteReady(true), 1500)
+    return () => clearTimeout(id)
+  }, [stage])
+
   /* -- Stage 7: recalculating. Fires whenever the pace actually changes. */
   const firstPace = useRef(true)
   useEffect(() => {
@@ -164,6 +190,9 @@ export function RecoveryView({
   if (!journey || !friction || !work || !check || !plan) {
     return <p className="muted">{t.recovery.loading}</p>
   }
+
+  /** The pace the new route needs, until the student picks one of their own. */
+  const routePace = strategyId || timeChoice !== null ? dailyMinutes : check.requiredDailyMinutes || dailyMinutes
 
   const intervention = lifeState ? interventionFor(lifeState, lang) : null
   const oneThing = todaysOneThing(plan)
@@ -223,11 +252,11 @@ export function RecoveryView({
   }
 
   return (
-    <div className="stack">
+    <div className="stack recovery">
       {/* A — Welcome back. Emotional first, academic second. */}
       <section className="rcv-hero">
         <span className="rcv-hero__mark" aria-hidden="true">
-          <Icon name="wave" size={26} />
+          <Icon name="safeHarbor" size={28} />
         </span>
         <h1 className="rcv-hero__title">{copy.welcome.title}</h1>
         <p className="rcv-hero__sub">{copy.welcome.sub}</p>
@@ -239,47 +268,21 @@ export function RecoveryView({
         )}
       </section>
 
-      {/* A2 — Reconnect. Three cards on what they last studied, before any
-          number. Optional, and "not now" is always one tap away. */}
-      {reviewOffered && !reviewSkipped && (
-        <section className="rv-offer">
-          <div className="rv-offer__eyebrow">
-            <Icon name="spark" size={14} /> {t.review.offer.eyebrow}
+      {/* B — Recalculating your route. The numbers arrive as a route that
+          still ends at the same destination, not as a backlog. */}
+      <section className="card recalc-card">
+        <div className="recalc-card__head">
+          <RouteRecalc animate={!reducedMotion()} className="recalc-card__art" key={dailyMinutes} />
+          <div className="recalc-card__text">
+            <div className="recalc-card__title" aria-live="polite">
+              {routeReady ? copy.recalcCard.done : copy.recalcCard.title}
+            </div>
+            <div className="recalc-card__meta">
+              {copy.recalcCard.meta(work.daysLeft, work.modules, routePace)}
+            </div>
+            <div className="recalc-card__keep">{copy.recalcCard.keep}</div>
           </div>
-          <div className="rv-offer__title">{t.review.offer.title}</div>
-          <p className="rv-offer__body">
-            {t.review.offer.body(
-              journey.milestones.find((m) => m.moduleId === reviewSet[0]?.moduleId)?.subtitle ?? '',
-            )}
-          </p>
-          <div className="rv-offer__cards" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
-          <div className="rv-offer__points">{t.review.offer.points(pointsConfig.REVIEW_SET_BONUS)}</div>
-          <div className="rv-offer__actions">
-            <button className="btn btn--beacon" style={{ flex: 1 }} onClick={() => setDeckOpen(true)}>
-              {t.review.offer.start} <Icon name="arrow" size={16} />
-            </button>
-            <button className="btn btn--onDark" onClick={() => setReviewSkipped(true)}>
-              {t.review.offer.skip}
-            </button>
-          </div>
-        </section>
-      )}
-
-      {deckOpen && (
-        <ReviewDeck
-          questions={reviewSet}
-          onClose={() => setDeckOpen(false)}
-          onDone={() => setDeckOpen(false)}
-        />
-      )}
-
-      {/* B — The situation in three numbers. Not eighteen rows. */}
-      <section className="card">
-        <div className="eyebrow">{copy.situation.eyebrow}</div>
+        </div>
         <div className="rcv-sit">
           <div className="rcv-sit__cell">
             <div className="rcv-sit__value">{copy.situation.days(work.daysLeft)}</div>
@@ -294,6 +297,72 @@ export function RecoveryView({
             <div className="rcv-sit__label">{copy.situation.modulesLabel}</div>
           </div>
         </div>
+      </section>
+
+      {/* A2 — Comeback mission: three cards on what they already know.
+          Optional, and "not now" is always one tap away. */}
+      {reviewOffered && !reviewSkipped && (
+        <section className="nba nba--compass comeback">
+          <span className="nba__compass" aria-hidden="true">
+            <Icon name="compass" size={30} />
+          </span>
+          <div className="nba__content">
+            <div className="nba__eyebrow">{t.review.offer.eyebrow}</div>
+            <div className="nba__title">{t.review.offer.title}</div>
+            <p className="nba__meta" style={{ margin: 0 }}>
+              {t.review.offer.body(
+                journey.milestones.find((m) => m.moduleId === reviewSet[0]?.moduleId)?.subtitle ?? '',
+              )}
+            </p>
+            <div className="comeback__points">{t.review.offer.points(pointsConfig.REVIEW_SET_BONUS)}</div>
+            <div className="nba__cta row">
+              <button className="btn" style={{ flex: 1 }} onClick={() => setDeckOpen(true)}>
+                {t.review.offer.start} <Icon name="arrow" size={16} />
+              </button>
+              <button className="btn btn--ghost" onClick={() => setReviewSkipped(true)}>
+                {t.review.offer.skip}
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {deckOpen && (
+        <ReviewDeck
+          questions={reviewSet}
+          onClose={() => setDeckOpen(false)}
+          onDone={() => setDeckOpen(false)}
+        />
+      )}
+
+      {/* Resilience: what coming back earns. Four, never a wall of badges. */}
+      <section className="card resil-card">
+        <div className="row row--between">
+          <div className="eyebrow">{copy.resilience.eyebrow}</div>
+          <span className="muted" style={{ fontSize: 'var(--text-xs)' }}>
+            {copy.resilience.of(
+              RESILIENCE.filter((r) => achievements.find((a) => a.id === r.id)?.earned).length,
+              RESILIENCE.length,
+            )}
+          </span>
+        </div>
+        <ul className="resil">
+          {RESILIENCE.map((r) => {
+            const a = achievements.find((x) => x.id === r.id)
+            if (!a) return null
+            return (
+              <li key={r.id} className={`resil__item${a.earned ? ' resil__item--earned' : ''}`} title={a.earned ? a.description : a.hint}>
+                <span className="resil__mark">
+                  <Icon name={r.icon} size={26} tone="none" />
+                </span>
+                <span className="resil__title">{a.title}</span>
+              </li>
+            )
+          })}
+        </ul>
+        <p className="muted" style={{ margin: 'var(--space-3) 0 0', fontSize: 'var(--text-xs)' }}>
+          {copy.resilience.body}
+        </p>
       </section>
 
       {/* C — Feasibility. The one verdict FARO must never fake. */}
@@ -465,7 +534,7 @@ export function RecoveryView({
               <>
                 {updated && (
                   <div className="rcv-updated">
-                    <Icon name="refresh" size={14} />
+                    <Icon name="recalculate" size={16} />
                     <span>
                       <strong>{copy.route.updated.title}</strong> {copy.route.updated.body(dailyMinutes)}
                     </span>
@@ -486,7 +555,7 @@ export function RecoveryView({
                         ))}
                         {d.checkpointLabel && (
                           <div className="rcv-day__flag">
-                            <Icon name="flag" size={12} /> {copy.route.checkpoint(d.checkpointLabel)}
+                            <Icon name="checkpoint" size={14} /> {copy.route.checkpoint(d.checkpointLabel)}
                           </div>
                         )}
                       </div>

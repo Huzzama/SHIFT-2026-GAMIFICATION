@@ -27,7 +27,7 @@ Desde el punto de vista de la institución, FARO es **un lector de solo lectura*
 - **Canvas** sigue siendo la fuente de verdad académica. FARO no escribe ahí.
 - **El backend** es el único proceso que conoce la credencial de Canvas y, si el mentor con IA está activo, la clave de la API de Gemini. Es un servidor Node.js sin dependencias de terceros (`server/`), lo que reduce a cero el riesgo de cadena de suministro en el proceso que sostiene los secretos.
 - **La extensión** es solo interfaz. No tiene token, no tiene permiso de red hacia Canvas, y solo puede pedir al backend rutas que el backend ya decidió permitir.
-- **El mentor** es local por omisión: responde en el dispositivo, sin modelo de IA. Si la institución lo activa (`VITE_MENTOR_MODE=gemini` y `GEMINI_API_KEY` en el backend), las conversaciones abiertas van a Gemini **a través del backend, nunca directo desde el navegador**, con un contexto de once campos (ninguno identifica a la persona), el mensaje del estudiante y los últimos 8 turnos de la conversación. Si Gemini no responde, contesta el mentor local.
+- **El mentor** responde con Gemini solo si el backend tiene `GEMINI_API_KEY`; si no, responde el mentor local, en el dispositivo, sin modelo de IA. Con el modo por omisión (`VITE_MENTOR_MODE=auto`), la extensión pregunta al backend (`GET /health`, sin datos del estudiante) si tiene mentor configurado. Una institución que no apruebe el mentor con IA construye con `VITE_MENTOR_MODE=local` o no le da clave al servidor. Cuando responde Gemini, las conversaciones abiertas van **a través del backend, nunca directo desde el navegador**, con un contexto de once campos (ninguno identifica a la persona), el mensaje del estudiante y los últimos 8 turnos de la conversación. Si Gemini no responde, contesta el mentor local.
 
 ## Postura de seguridad en una frase
 
@@ -37,7 +37,7 @@ Desde el punto de vista de la institución, FARO es **un lector de solo lectura*
 
 | Componente | Estado |
 |---|---|
-| Backend con token, lista blanca, CORS restringido, límite de tasa, sin fuga de token en logs | **Implementado y probado** (36 verificaciones automáticas en total) |
+| Backend con token, lista blanca, CORS restringido, límite de tasa, sin fuga de token en logs | **Implementado y probado** (38 verificaciones automáticas en total) |
 | Extensión sin credenciales, modo `http` contra el backend | **Implementado** |
 | Contrato de datos del mentor (11 campos), revalidado en el backend | **Implementado** |
 | Mentor con Gemini (`POST /api/mentor`): clave solo en el servidor, conversación fuera de los logs, respaldo al mentor local | **Implementado y probado contra un Gemini simulado**; no se ha ejercitado contra la API real de Google desde el entorno de desarrollo; el equipo lo valida con su propia clave |

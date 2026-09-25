@@ -6,6 +6,7 @@ import { StoreProvider } from '@/state/store'
 import { ThemeProvider } from '@/state/theme'
 import './styles/global.css'
 import './styles/views.css'
+import './styles/voyage.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

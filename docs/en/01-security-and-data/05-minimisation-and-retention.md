@@ -44,7 +44,7 @@ The only human-authored information is the **destination sentence**, which the s
 
 **[code]** `src/lib/mentorContext.ts`, `src/types/index.ts` (`MentorContext` interface).
 
-**When the mentor uses Gemini** (`VITE_MENTOR_MODE=gemini`), what leaves for Google, always through the backend and never directly from the browser, is: these eleven fields, the student's message and the last 8 turns of the current conversation (role and text, nothing else). The backend does not trust the extension to have done its part: `sanitizeMentorRequest` rebuilds the request with only the eleven fields, checks the enumerated values, caps lengths and drops any extra field **[test]** "mentor: extra fields in the context never reach Gemini", "mentor: history is trimmed to the last 8 turns".
+**When the mentor uses Gemini** (the backend has `GEMINI_API_KEY` and the extension was not built with `VITE_MENTOR_MODE=local`), what leaves for Google, always through the backend and never directly from the browser, is: these eleven fields, the student's message and the last 8 turns of the current conversation (role and text, nothing else). The backend does not trust the extension to have done its part: `sanitizeMentorRequest` rebuilds the request with only the eleven fields, checks the enumerated values, caps lengths and drops any extra field **[test]** "mentor: extra fields in the context never reach Gemini", "mentor: history is trimmed to the last 8 turns".
 
 The structured parts never go through the model: the check-in ("I noticed something changed…"), Focus sessions, the weekend plan and answers about points are computed in the extension from real data and are not sent to the model. Their lines do stay in the conversation, so they can travel as part of the last 8 turns if the student then writes an open message. A "do my graded work" request is answered by the backend itself without calling the model **[test]** "mentor: "do my homework" is refused before any model call".
 
@@ -69,7 +69,7 @@ Community is the part of FARO with the greatest temptation to collect social dat
 | Canvas request log | Browser memory, 30 entries | While FARO is open | Automatic; never persisted or sent |
 | Purpose, preferences, sessions, profile, plan accepted in the mentor (`weekPlan`) | `chrome.storage.local` | Until the student deletes it | *Reset* button in Progress, or uninstalling the extension; the plan also with *Clear plan* on Home |
 | Conversation with the mentor | The extension's memory | The session | Closing FARO or *Reset*. The backend neither stores nor logs it |
-| What is sent to Gemini (`gemini` mode) | Google | Under the Gemini API terms (chapter 7) | With a paid key, Google logs it for a limited time only for abuse detection and legal requirements |
+| What is sent to Gemini (when Gemini answers) | Google | Under the Gemini API terms (chapter 7) | With a paid key, Google logs it for a limited time only for abuse detection and legal requirements |
 | Canvas token | `server/.env` + backend memory | Until rotation or revocation | Edit `.env` and restart; revoke in Canvas |
 | Gemini key | `server/.env` + backend memory | Until rotation or revocation | Edit `.env` and restart; revoke in Google |
 | Launch cache (course id, user id) | Backend memory | Until the process restarts | Restart |
